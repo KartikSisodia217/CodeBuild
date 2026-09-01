@@ -38,30 +38,35 @@ class AttackPlan(BaseModel):
 
 class AttackPayload(BaseModel):
     payload_content: str
+    target_node: Optional[str] = None
 
 class InterceptedCall(BaseModel):
     tool_name: str
-    arguments: Dict[str, Any]
+    arguments: Dict[str, Any] = {}
     run_id: str
-
-class ExecutionContext(BaseModel):
-    pass
+    schema_definition: Optional[Dict[str, Any]] = None
+    context: Optional[Dict[str, Any]] = None
 
 class MockRequest(BaseModel):
     pass
 
 class MockResponse(BaseModel):
+    status_code: int = 200
     response_body: str
+    data: Optional[Dict[str, Any]] = None
 
 class SandboxState(BaseModel):
-    pass
+    state_tree: Dict[str, Any] = {}
 
 class StateSnapshot(BaseModel):
-    pass
+    timestamp: Optional[str] = None
+    state: Dict[str, Any] = {}
 
 class StateDiff(BaseModel):
-    initial_state: bool
-    final_state: bool
+    before: Dict[str, Any] = {}
+    after: Dict[str, Any] = {}
+    diff_keys: List[str] = []
+    has_changes: bool = False
 
 class ExecutionEvent(BaseModel):
     pass
