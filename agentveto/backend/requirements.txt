@@ -1,0 +1,13 @@
+# AgentVeto Backend Dependencies
+fastapi
+uvicorn
+pydantic
+langgraph
+anthropic
+openai
+openinference-instrumentation
+opentelemetry-api
+opentelemetry-sdk
+sqlalchemy
+pyyaml
+deepdiff

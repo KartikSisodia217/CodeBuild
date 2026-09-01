@@ -1,0 +1,7 @@
+# Placeholder for Evidence DAG YAML serialization
+setup:
+  target_tool: "read_tickets"
+attack_sequence:
+  - step: 1
+assertions:
+  - type: "CRITICAL_VETO"
