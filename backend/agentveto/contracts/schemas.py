@@ -8,12 +8,41 @@ Frozen after Phase 0 (Hour 4). Changes require team sync.
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
 from datetime import datetime
+import uuid
 
 
 # ─── Enums ───────────────────────────────────────────────────────────────────
+
+
+# --- Enums (from Member 4) ---
+class SpanKind(str, Enum):
+    AGENT = "AGENT"
+    TOOL = "TOOL"
+    LLM = "LLM"
+    CHAIN = "CHAIN"
+
+
+class EvaluationStatus(str, Enum):
+    PASS = "PASS"
+    WARN = "WARN"
+    CRITICAL_VETO = "CRITICAL_VETO"
+
+
+class OWASPThreatCategory(str, Enum):
+    ASI01_GOAL_HIJACK = "ASI01: Agent Goal Hijacking (Indirect Prompt Injection)"
+    ASI02_TOOL_MISUSE = "ASI02: Tool Misuse & Unauthorized Invocation"
+    ASI03_PRIVILEGE_ESCALATION = "ASI03: Privilege Escalation & Confused Deputy"
+    ASI04_UNBOUNDED_ACTION = "ASI04: Unbounded Financial / Environmental Action"
+    ASI06_MEMORY_POISONING = "ASI06: Memory & RAG State Poisoning"
+    ASI08_CASCADING_FAILURE = "ASI08: Cascading Tool Loops & Retry Storms"
+    MCP10_DATA_EXFILTRATION = "MCP10: Sensitive Data Exfiltration"
+    UNKNOWN = "UNKNOWN: General Security Anomaly"
+
+
+
 
 class SpanKind(str, Enum):
     """OpenInference span kinds for telemetry."""
@@ -168,112 +197,188 @@ class StateSnapshot(BaseModel):
 
 
 class StateDiff(BaseModel):
-    """State difference computed by the sandbox.
-    
-    Uses Member 3's field names: before, after, diff_keys, has_changes.
-    """
+    """State difference computed by the sandbox."""
+    run_id: Optional[str] = Field(default=None, description="Execution run identifier")
     before: Dict[str, Any] = Field(default_factory=dict)
     after: Dict[str, Any] = Field(default_factory=dict)
     diff_keys: List[str] = Field(default_factory=list, description="Keys that changed")
+    unauthorized_changes: List[str] = Field(default_factory=list)
     has_changes: bool = Field(default=False, description="Whether any changes occurred")
-    run_id: str = Field(default="", description="Execution run identifier")
+    state_mutated: bool = False
+    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+
+    def __init__(self, **data):
+        if "has_changes" in data and "state_mutated" not in data:
+            data["state_mutated"] = data["has_changes"]
+        if "state_mutated" in data and "has_changes" not in data:
+            data["has_changes"] = data["state_mutated"]
+        super().__init__(**data)
 
 
 # ─── Trace Engine Contracts ──────────────────────────────────────────────────
 
 class OpenInferenceSpan(BaseModel):
     """A single OpenInference-compatible telemetry span."""
-    span_id: str = Field(default="", description="Unique span identifier")
+    span_id: str = Field(default_factory=lambda: f"span_{uuid.uuid4().hex[:8]}", description="Unique span identifier")
     parent_id: Optional[str] = Field(default=None, description="Parent span ID")
-    kind: SpanKind = Field(..., description="Span kind (LLM, AGENT, TOOL, CHAIN)")
+    kind: SpanKind = Field(default=SpanKind.TOOL, description="Span kind (LLM, AGENT, TOOL, CHAIN)")
+    span_kind: Optional[str] = None
     name: str = Field(default="", description="Span name (e.g., tool function name)")
     attributes: Dict[str, Any] = Field(default_factory=dict, description="Span attributes")
     status: str = Field(default="OK", description="Span status")
-    start_time: Optional[datetime] = Field(default=None)
-    end_time: Optional[datetime] = Field(default=None)
+    status_code: str = "OK"
+    status_message: Optional[str] = None
+    start_time: Optional[Union[datetime, str]] = Field(default=None)
+    end_time: Optional[Union[datetime, str]] = Field(default=None)
     events: List[Dict[str, Any]] = Field(default_factory=list, description="Span events")
+    
+    # Member 4 additions
+    input_value: Optional[Any] = None
+    output_value: Optional[Any] = None
+    tool_name: Optional[str] = None
+    tool_parameters: Optional[Dict[str, Any]] = None
+    llm_prompt: Optional[str] = None
+    llm_response: Optional[str] = None
+    llm_model: Optional[str] = None
+    is_tainted: bool = False
+    is_injection_source: bool = False
+    is_unauthorized_sink: bool = False
+    threat_category: Optional[Union[OWASPThreatCategory, str]] = None
 
 
 class TrajectoryData(BaseModel):
-    """Complete execution trajectory.
-    
-    UPGRADED: Now holds a run_id and list of spans for complete trajectory.
-    Backward compatibility: also accepts legacy single-span mode via
-    span_kind + attributes fields for Member 2's existing code.
-    """
-    # New multi-span trajectory fields
-    run_id: str = Field(default="", description="Unique run identifier")
+    """Complete execution trajectory."""
+    run_id: str = Field(default_factory=lambda: f"run_{uuid.uuid4().hex[:12]}", description="Unique run identifier")
+    agent_name: str = "TargetAgent"
+    system_prompt: Optional[str] = None
+    user_prompt: str = ""
     spans: List[OpenInferenceSpan] = Field(default_factory=list, description="All spans in this trajectory")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Run metadata")
+    created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
     
     # Legacy single-span fields (backward compatibility with Member 2's storage)
-    span_kind: str = Field(default="", description="Legacy: span kind string")
-    attributes: Dict[str, Any] = Field(default_factory=dict, description="Legacy: span attributes")
+    span_kind: Optional[str] = Field(default="", description="Legacy: span kind string")
+    attributes: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Legacy: span attributes")
 
 
-# ─── Evaluator Contracts ─────────────────────────────────────────────────────
+# ─── Member 4 Contracts ─────────────────────────────────────────────────────
+
+class PolicyRule(BaseModel):
+    rule_id: str = "RULE-001"
+    name: str = "RESTRICTED_SINK_RULE"
+    sink_tool: str = "execute_refund"
+    description: str = "Blocks unauthorized tool executions"
+    requires_authorization: bool = True
+    severity: EvaluationStatus = EvaluationStatus.CRITICAL_VETO
+    threat_category: Optional[Union[OWASPThreatCategory, str]] = None
+    condition_expression: Optional[str] = None
+
 
 class EvaluationResult(BaseModel):
-    """Result of the deterministic evaluation."""
-    status: str = Field(..., description="PASS, WARN, or CRITICAL_VETO")
-    reason: str = Field(default="", description="Human-readable explanation")
-    violating_span_id: Optional[str] = Field(default=None, description="Span that caused the violation")
-    trajectory_summary: Dict[str, Any] = Field(default_factory=dict, description="Summary of the trajectory")
-    run_id: str = Field(default="", description="Execution run identifier")
+    evaluation_id: str = Field(default_factory=lambda: f"eval_{uuid.uuid4().hex[:8]}")
+    run_id: str = ""
+    status: Union[EvaluationStatus, str] = EvaluationStatus.PASS
+    violating_span_id: Optional[str] = None
+    violating_tool: Optional[str] = None
+    injection_source_span_id: Optional[str] = None
+    rule_name: Optional[str] = None
+    reason: str = ""
+    threat_category: Optional[Union[OWASPThreatCategory, str]] = None
+    state_diff: Optional[StateDiff] = None
+    latency_ms: float = 0.0
+    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    details: Dict[str, Any] = Field(default_factory=dict)
 
 
-# ─── Evidence Registry Contracts ─────────────────────────────────────────────
+class DAGNodeData(BaseModel):
+    label: str
+    kind: Optional[SpanKind] = None
+    name: str
+    status: str
+    is_injection_source: bool = False
+    is_unauthorized_sink: bool = False
+    is_vetoed: bool = False
+    inputs: Optional[Any] = None
+    outputs: Optional[Any] = None
+    threat_category: Optional[str] = None
+    span_id: str
+    details: Dict[str, Any] = Field(default_factory=dict)
+
 
 class DAGNode(BaseModel):
-    """A node in the evidence DAG."""
-    id: str = Field(default="", description="Unique node identifier")
-    type: str = Field(default="default", description="Node type for rendering")
-    label: str = Field(default="", description="Display label")
-    data: Dict[str, Any] = Field(default_factory=dict, description="Node data")
-    style: Dict[str, Any] = Field(default_factory=dict, description="Visual style")
+    id: str
+    type: str = "custom"
+    data: Optional[Dict[str, Any]] = None
+    position: Dict[str, float] = Field(default_factory=lambda: {"x": 0.0, "y": 0.0})
 
 
 class DAGEdge(BaseModel):
-    """An edge in the evidence DAG."""
-    id: str = Field(default="", description="Unique edge identifier")
-    source: str = Field(default="", description="Source node ID")
-    target: str = Field(default="", description="Target node ID")
-    label: str = Field(default="", description="Edge label")
-    style: Dict[str, Any] = Field(default_factory=dict, description="Visual style")
+    id: str
+    source: str
+    target: str
+    animated: bool = False
+    style: Optional[Dict[str, Any]] = None
+    label: Optional[str] = None
+
+
+class EvidenceDAGNode(BaseModel):
+    id: str
+    type: str = "custom"
+    data: DAGNodeData
+    position: Dict[str, float]
+
+
+class EvidenceDAGEdge(BaseModel):
+    id: str
+    source: str
+    target: str
+    animated: bool = False
+    style: Optional[Dict[str, Any]] = None
+    label: Optional[str] = None
 
 
 class EvidenceDAG(BaseModel):
-    """Complete evidence DAG for visualization."""
-    nodes: List[Any] = Field(default_factory=list)
-    edges: List[Any] = Field(default_factory=list)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    run_id: str = ""
+    agent_name: str = ""
+    nodes: List[Union[EvidenceDAGNode, Dict[str, Any]]] = Field(default_factory=list)
+    edges: List[Union[EvidenceDAGEdge, Dict[str, Any]]] = Field(default_factory=list)
+    evaluation: Optional[EvaluationResult] = None
+    summary: str = ""
+    veto_count: int = 0
+    warning_count: int = 0
 
 
-# ─── Legacy stubs (kept for backward compatibility) ──────────────────────────
+class AttackVectorSpec(BaseModel):
+    poisoned_source_tool: str
+    payload: str
+    target_sink_tool: str
+    threat_category: str
 
-class AgentConfig(BaseModel):
+
+class ExpectedAdjudicationSpec(BaseModel):
+    verdict: EvaluationStatus
+    violation_rule: str
+    state_invariant: Dict[str, Any] = Field(default_factory=dict)
+
+
+class RegressionTestSpec(BaseModel):
+    version: str = "agentveto/v1"
+    test_id: str
+    name: str
+    target_agent: str
+    threat_category: str
+    created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    setup: Dict[str, Any] = Field(default_factory=dict)
+    attack_vector: AttackVectorSpec
+    expected_adjudication: ExpectedAdjudicationSpec
+
+
+class RegressionTest(RegressionTestSpec):
     pass
 
-class ToolParameter(BaseModel):
-    pass
-
-class ToolMetadata(BaseModel):
-    pass
-
-class AttackObjective(BaseModel):
-    pass
-
-class MockRequest(BaseModel):
-    pass
-
-class ExecutionEvent(BaseModel):
-    pass
-
-class PolicyRule(BaseModel):
-    pass
-
-class RegressionTest(BaseModel):
-    pass
 
 class RunMetadata(BaseModel):
-    pass
+    run_id: str
+    started_at: str
+    completed_at: Optional[str] = None
+    status: str

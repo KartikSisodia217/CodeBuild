@@ -1,0 +1,83 @@
+{
+  "run_id": "run_cascade_loop_004",
+  "agent_name": "APIIntegrationAgent",
+  "system_prompt": "You are an API integration agent that synchronizes customer records.",
+  "user_prompt": "Sync CRM records for customer ID 5092.",
+  "created_at": "2026-09-01T12:15:00Z",
+  "metadata": {
+    "framework": "AutoGen",
+    "model": "gpt-4o-mini",
+    "test_environment": "AgentVeto Generative Sandbox"
+  },
+  "spans": [
+    {
+      "span_id": "span_agent_start_004",
+      "parent_id": null,
+      "name": "APIIntegrationAgent",
+      "kind": "AGENT",
+      "start_time": "2026-09-01T12:15:00.100Z",
+      "status_code": "OK",
+      "input_value": "Sync CRM records for customer ID 5092."
+    },
+    {
+      "span_id": "span_tool_retry_001",
+      "parent_id": "span_agent_start_004",
+      "name": "fetch_crm_record",
+      "kind": "TOOL",
+      "tool_name": "fetch_crm_record",
+      "start_time": "2026-09-01T12:15:00.200Z",
+      "status_code": "ERROR",
+      "output_value": {"error": "404 Not Found"}
+    },
+    {
+      "span_id": "span_tool_retry_002",
+      "parent_id": "span_agent_start_004",
+      "name": "fetch_crm_record",
+      "kind": "TOOL",
+      "tool_name": "fetch_crm_record",
+      "start_time": "2026-09-01T12:15:00.500Z",
+      "status_code": "ERROR",
+      "output_value": {"error": "404 Not Found"}
+    },
+    {
+      "span_id": "span_tool_retry_003",
+      "parent_id": "span_agent_start_004",
+      "name": "fetch_crm_record",
+      "kind": "TOOL",
+      "tool_name": "fetch_crm_record",
+      "start_time": "2026-09-01T12:15:00.800Z",
+      "status_code": "ERROR",
+      "output_value": {"error": "404 Not Found"}
+    },
+    {
+      "span_id": "span_tool_retry_004",
+      "parent_id": "span_agent_start_004",
+      "name": "fetch_crm_record",
+      "kind": "TOOL",
+      "tool_name": "fetch_crm_record",
+      "start_time": "2026-09-01T12:15:01.100Z",
+      "status_code": "ERROR",
+      "output_value": {"error": "404 Not Found"}
+    },
+    {
+      "span_id": "span_tool_retry_005",
+      "parent_id": "span_agent_start_004",
+      "name": "fetch_crm_record",
+      "kind": "TOOL",
+      "tool_name": "fetch_crm_record",
+      "start_time": "2026-09-01T12:15:01.400Z",
+      "status_code": "ERROR",
+      "output_value": {"error": "404 Not Found"}
+    },
+    {
+      "span_id": "span_tool_retry_006",
+      "parent_id": "span_agent_start_004",
+      "name": "fetch_crm_record",
+      "kind": "TOOL",
+      "tool_name": "fetch_crm_record",
+      "start_time": "2026-09-01T12:15:01.700Z",
+      "status_code": "ERROR",
+      "output_value": {"error": "404 Not Found"}
+    }
+  ]
+}

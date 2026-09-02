@@ -1,11 +1,16 @@
 """
-Unit Tests for AgentVeto Deterministic Policy Engine
-Owner: Policy & Evidence Engineer (Member 4)
+Unit Tests for AgentVeto Deterministic Policy Engine (Member 4)
+Verifies:
+1. Hard CRITICAL_VETO triggered on unauthorized financial sink (execute_refund).
+2. Clean PASS on benign support ticket flow.
+3. CRITICAL_VETO on sensitive API key exfiltration (DLP regex detection).
+4. StateDiff unauthorized mutation detection.
+5. WARN issued on cascading retry loops.
 """
 
 import json
 import os
-from agentveto.contracts.schemas import (
+from agentveto.schemas import (
     TrajectoryData,
     StateDiff,
     EvaluationStatus,
@@ -17,7 +22,7 @@ from agentveto.evaluator.policy_engine import evaluate_trace
 
 
 def load_sample_trace(filename: str) -> TrajectoryData:
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     file_path = os.path.join(base_dir, "examples", "sample_traces", filename)
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -33,7 +38,7 @@ def test_zero_click_echoleak_triggers_critical_veto():
     assert result.violating_tool == "execute_refund"
     assert result.injection_source_span_id == "span_tool_read_tickets_001"
     assert "Indirect Prompt Injection" in result.reason
-    assert result.latency_ms < 50.0
+    assert result.latency_ms < 50.0  # Must be sub-50ms deterministic execution
 
 
 def test_benign_support_flow_passes():
