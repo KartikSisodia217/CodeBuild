@@ -23,13 +23,14 @@ import {
   ArrowDownRight,
   Lock,
   ExternalLink,
-  Flame
+  Flame,
+  MousePointerClick
 } from 'lucide-react';
 import clsx from 'clsx';
 
 // --- CUSTOM NODES ---
 
-const CustomNode = ({ data, type }) => {
+const CustomNode = ({ data, type, selected }) => {
   const isVeto = type === 'veto_sink';
   const isInjection = type === 'injection_source';
   const isPrompt = type === 'user_prompt';
@@ -38,7 +39,8 @@ const CustomNode = ({ data, type }) => {
 
   return (
     <div className={clsx(
-      "w-[340px] rounded-2xl border backdrop-blur-xl transition-all duration-300 relative overflow-hidden shadow-2xl group",
+      "w-[340px] rounded-2xl border backdrop-blur-xl transition-all duration-300 relative overflow-hidden shadow-2xl cursor-pointer select-none group",
+      selected ? "ring-2 ring-indigo-400 scale-[1.02]" : "",
       isVeto ? "bg-[#14080a]/90 border-red-500/60 shadow-[0_0_30px_rgba(239,68,68,0.25)] hover:border-red-400" :
       isInjection ? "bg-[#161106]/90 border-amber-500/60 shadow-[0_0_30px_rgba(245,158,11,0.2)] hover:border-amber-400" :
       isPrompt ? "bg-[#0b0f1d]/90 border-indigo-500/50 shadow-[0_0_20px_rgba(99,102,241,0.15)] hover:border-indigo-400" :
@@ -95,11 +97,14 @@ const CustomNode = ({ data, type }) => {
           </div>
         </div>
 
-        {isVeto && (
-          <span className="px-2 py-0.5 text-[9px] font-mono font-black uppercase rounded bg-red-500/20 border border-red-500/40 text-red-400 animate-pulse">
-            VETO
-          </span>
-        )}
+        <div className="flex items-center space-x-1.5">
+          {isVeto && (
+            <span className="px-2 py-0.5 text-[9px] font-mono font-black uppercase rounded bg-red-500/20 border border-red-500/40 text-red-400 animate-pulse">
+              VETO
+            </span>
+          )}
+          <MousePointerClick className="w-3.5 h-3.5 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+        </div>
       </div>
 
       {/* Node Body */}
@@ -151,7 +156,7 @@ const nodeTypes = {
   veto_sink: (props) => <CustomNode {...props} type="veto_sink" />
 };
 
-export default function TraceGraph({ dag, evaluation }) {
+export default function TraceGraph({ dag, evaluation, onNodeClick }) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
@@ -207,6 +212,7 @@ export default function TraceGraph({ dag, evaluation }) {
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onNodeClick={(_, node) => onNodeClick && onNodeClick(node)}
         nodeTypes={nodeTypes}
         fitView
         fitViewOptions={{ padding: 0.25 }}
