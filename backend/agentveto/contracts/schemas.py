@@ -198,6 +198,7 @@ class SandboxState(BaseModel):
 
 
 class StateSnapshot(BaseModel):
+    """State at a point in time."""
     timestamp: Optional[str] = None
     state: Dict[str, Any] = Field(default_factory=dict)
 
