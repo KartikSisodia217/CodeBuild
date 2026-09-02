@@ -59,7 +59,7 @@ class EvidenceGraphBuilder:
         )
 
         prev_node_id = root_node_id
-        x_offset = 320.0
+        x_offset = 400.0
         y_center = 180.0
         
         taint_active = False
@@ -116,9 +116,9 @@ class EvidenceGraphBuilder:
 
             y_pos = y_center
             if span.kind == SpanKind.LLM:
-                y_pos = y_center - 80.0
+                y_pos = y_center - 60.0
             elif span.kind == SpanKind.TOOL:
-                y_pos = y_center + (80.0 if i % 2 == 0 else -40.0)
+                y_pos = y_center + 60.0
 
             nodes.append(
                 EvidenceDAGNode(
@@ -150,7 +150,7 @@ class EvidenceGraphBuilder:
             )
 
             prev_node_id = node_id
-            x_offset += 280.0
+            x_offset += 380.0
 
         summary_text = (
             f"Trajectory evaluated: {len(trace.spans)} spans processed. "
