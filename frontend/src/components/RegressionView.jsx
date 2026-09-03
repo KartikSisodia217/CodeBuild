@@ -4,11 +4,7 @@ import {
   Copy, 
   Check, 
   Download, 
-  ShieldAlert, 
-  CheckCircle2, 
-  Terminal, 
-  BookmarkCheck,
-  Zap
+  BookmarkCheck
 } from 'lucide-react';
 import clsx from 'clsx';
 import YamlViewer from './YamlViewer';
@@ -19,14 +15,15 @@ export default function RegressionView({ data }) {
 
   if (!data || !data.metadata?.yaml_content) {
     return (
-      <div className="p-8 text-center text-slate-500 font-mono text-xs">
+      <div className="p-8 text-center text-av-textMuted font-mono text-sm">
         No regression specification generated.
       </div>
     );
   }
 
   const evaluation = data.evaluation || {};
-  const isVeto = data.verdict === 'VETO';
+  const verdict = data.metadata?.verdict || data.verdict;
+  const isVeto = verdict === 'CRITICAL_VETO' || verdict === 'VETO';
 
   const handleCopy = () => {
     navigator.clipboard.writeText(data.metadata?.yaml_content);
@@ -49,33 +46,25 @@ export default function RegressionView({ data }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl">
       
-      {/* Vulnerability Gating Status Banner */}
-      <div className={clsx(
-        "p-6 rounded-2xl border flex items-center justify-between shadow-xl",
-        isVeto ? "bg-red-950/20 border-red-500/40" : "bg-slate-900 border-slate-800"
-      )}>
+      {/* Status Banner */}
+      <div className="p-6 rounded-xl border border-av-border flex items-center justify-between shadow-subtle bg-av-surface">
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+          <div className="w-12 h-12 rounded-lg bg-av-bg border border-av-borderLight flex items-center justify-center text-av-textSecondary shrink-0">
             <FileCode2 className="w-6 h-6" />
           </div>
 
           <div>
             <div className="flex items-center space-x-2">
-              <h2 className="text-base font-bold text-white uppercase font-mono">
-                {saved ? 'REGRESSION TEST SAVED' : (isVeto ? 'VULNERABILITY CONFIRMED' : 'TEST SPECIFICATION CREATED')}
+              <h2 className="text-base font-semibold text-av-textPrimary">
+                {saved ? 'Regression Test Saved' : (isVeto ? 'Vulnerability Captured' : 'Test Specification Created')}
               </h2>
-              {saved && (
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  STORED IN TEST SUITE
-                </span>
-              )}
             </div>
             
-            <p className="text-xs text-slate-300 mt-1">
+            <p className="text-sm text-av-textSecondary mt-1">
               {isVeto 
-                ? 'This caught exploit has been serialized into a deterministic regression test to prevent regressions in GitHub Actions.' 
+                ? 'This caught exploit has been serialized into a deterministic regression test.' 
                 : 'Nominal baseline interaction converted into invariant compliance test.'}
             </p>
           </div>
@@ -85,68 +74,68 @@ export default function RegressionView({ data }) {
           {!saved ? (
             <button
               onClick={handleSave}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-bold rounded-xl flex items-center space-x-2 shadow-lg shadow-indigo-600/30 transition-all"
+              className="btn-primary space-x-2"
             >
               <BookmarkCheck className="w-4 h-4" />
-              <span>SAVE REGRESSION TEST</span>
+              <span>Save Test</span>
             </button>
           ) : (
-            <div className="flex items-center space-x-1.5 text-xs font-mono text-emerald-400 bg-emerald-950/30 px-3 py-1.5 rounded-lg border border-emerald-500/30">
+            <div className="flex items-center space-x-1.5 text-sm font-medium text-av-pass bg-[#101F18] px-3 py-1.5 rounded-md border border-av-pass/30">
               <Check className="w-4 h-4" />
-              <span>TEST SUITE UPDATED</span>
+              <span>Saved to Suite</span>
             </div>
           )}
         </div>
       </div>
 
       {/* Regression Metadata Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="p-4 rounded-xl bg-[#121824] border border-slate-800">
-          <span className="text-[10px] font-mono text-slate-500 uppercase">Test Identifier</span>
-          <div className="text-xs font-bold text-white font-mono mt-0.5">{data.run_id}</div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="p-4 rounded-lg bg-av-surface border border-av-border shadow-sm">
+          <span className="text-[10px] font-semibold text-av-textMuted uppercase tracking-wider">Test Identifier</span>
+          <div className="text-sm font-mono text-av-textPrimary mt-1">{data.run_id}</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#121824] border border-slate-800">
-          <span className="text-[10px] font-mono text-slate-500 uppercase">Threat Vector</span>
-          <div className="text-xs font-bold text-red-400 font-mono mt-0.5">{evaluation.threat_category || 'ASI01'}</div>
+        <div className="p-4 rounded-lg bg-av-surface border border-av-border shadow-sm">
+          <span className="text-[10px] font-semibold text-av-textMuted uppercase tracking-wider">Threat Vector</span>
+          <div className="text-sm font-mono text-av-textPrimary mt-1">{evaluation.threat_category || 'Agent Goal Hijacking'}</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#121824] border border-slate-800">
-          <span className="text-[10px] font-mono text-slate-500 uppercase">Expected Adjudication</span>
-          <div className="text-xs font-bold text-indigo-400 font-mono mt-0.5">{data.verdict || 'VETO'}</div>
+        <div className="p-4 rounded-lg bg-av-surface border border-av-border shadow-sm">
+          <span className="text-[10px] font-semibold text-av-textMuted uppercase tracking-wider">Expected Verdict</span>
+          <div className="text-sm font-mono text-av-textPrimary mt-1">{verdict || 'VETO'}</div>
         </div>
       </div>
 
       {/* YAML Specification Code Card */}
-      <div className="rounded-2xl bg-[#121824] border border-slate-800 overflow-hidden shadow-2xl">
+      <div className="rounded-xl bg-av-surface border border-av-border overflow-hidden shadow-subtle">
         
-        <div className="p-4 bg-[#0E131F] border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center space-x-2 font-mono text-xs text-slate-300">
-            <span className="text-indigo-400 font-bold">spec.yaml</span>
-            <span className="text-slate-600">•</span>
-            <span className="text-[11px] text-slate-500">Replayable via CLI: <code className="text-slate-300">python -m agentveto.cli test spec.yaml</code></span>
+        <div className="p-4 bg-av-surfaceElevated border-b border-av-border flex items-center justify-between">
+          <div className="flex items-center space-x-2 text-sm text-av-textSecondary">
+            <span className="font-semibold text-av-textPrimary">spec.yaml</span>
+            <span className="text-av-textMuted">•</span>
+            <span className="text-xs text-av-textMuted font-mono">agentveto test spec.yaml</span>
           </div>
 
           <div className="flex items-center space-x-2">
             <button
               onClick={handleCopy}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-mono font-medium text-slate-200 border border-slate-700 flex items-center space-x-1.5 transition-colors"
+              className="btn-secondary space-x-1.5 py-1.5 text-xs"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? 'Copied' : 'Copy YAML'}</span>
+              {copied ? <Check className="w-3.5 h-3.5 text-av-pass" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied ? 'Copied' : 'Copy'}</span>
             </button>
 
             <button
               onClick={handleDownload}
-              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-mono font-medium text-white shadow-sm shadow-indigo-600/30 flex items-center space-x-1.5 transition-colors"
+              className="btn-secondary space-x-1.5 py-1.5 text-xs"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Download .yaml</span>
+              <span>Download</span>
             </button>
           </div>
         </div>
 
-        <div className="p-6 bg-[#06080e] overflow-x-auto text-xs font-mono">
+        <div className="p-6 bg-av-bg overflow-x-auto text-sm font-mono text-av-textPrimary border-t border-av-borderLight">
           <YamlViewer content={data.metadata?.yaml_content} />
         </div>
 

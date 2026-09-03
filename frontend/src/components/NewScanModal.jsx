@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
-import { X, Play, Shield, Server, Crosshair, AlertCircle, UploadCloud, FileArchive, Loader2, CheckCircle2, ChevronRight } from 'lucide-react';
+import { X, Play, Server, UploadCloud, Loader2, CheckCircle2 } from 'lucide-react';
 import clsx from 'clsx';
 
 export default function NewScanModal({ isOpen, onClose, onStartScan }) {
@@ -8,8 +8,6 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
   
   // Demo State
   const [selectedAgent, setSelectedAgent] = useState('Customer Support Agent');
-  const [selectedProfile, setSelectedProfile] = useState('Adaptive Adversarial Testing');
-  const [selectedEnv, setSelectedEnv] = useState('Synthetic Sandbox');
 
   // Upload State
   const [isDragging, setIsDragging] = useState(false);
@@ -36,8 +34,8 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
     }
     onStartScan({
       agent_name: selectedAgent,
-      attack_profile: selectedProfile,
-      environment: selectedEnv,
+      attack_profile: 'Adaptive Adversarial Testing',
+      environment: 'Synthetic Sandbox',
       scenario_id: scenarioId
     });
   };
@@ -102,25 +100,17 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 select-none animate-fadeIn">
-      <div className={`w-full ${manifest ? 'max-w-4xl' : 'max-w-2xl'} transition-all duration-300 rounded-2xl bg-[#121824] border border-slate-800 shadow-2xl flex flex-col max-h-[90vh]`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className={`w-full ${manifest ? 'max-w-2xl' : 'max-w-xl'} bg-av-surfaceElevated border border-av-border rounded-xl shadow-modal overflow-hidden flex flex-col max-h-[90vh]`}>
         
         {/* Modal Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between shrink-0">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-              <Crosshair className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
-                Start Security Scan
-              </h2>
-              <p className="text-xs text-slate-400">Upload agent or use demo fixture</p>
-            </div>
-          </div>
+        <div className="px-6 py-4 border-b border-av-border flex items-center justify-between bg-av-surface">
+          <h2 className="text-sm font-semibold text-av-textPrimary">
+            New Scan
+          </h2>
           <button
             onClick={handleClose}
-            className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-1 rounded text-av-textSecondary hover:bg-av-surfaceHover hover:text-av-textPrimary transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -128,12 +118,12 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
 
         {/* Tabs */}
         {!manifest && uploadStatus !== 'analyzing' && (
-          <div className="flex border-b border-slate-800 px-6 pt-4 space-x-6 shrink-0">
+          <div className="flex px-6 pt-2 border-b border-av-border gap-6 bg-av-surface">
             <button
               onClick={() => setActiveTab('upload')}
               className={clsx(
-                "pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2",
-                activeTab === 'upload' ? "text-indigo-400 border-indigo-400" : "text-slate-500 border-transparent hover:text-slate-300"
+                "pb-3 text-xs font-semibold transition-colors border-b-2",
+                activeTab === 'upload' ? "text-av-textPrimary border-av-textPrimary" : "text-av-textSecondary border-transparent hover:text-av-textPrimary"
               )}
             >
               Upload Project
@@ -141,66 +131,38 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
             <button
               onClick={() => setActiveTab('demo')}
               className={clsx(
-                "pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2",
-                activeTab === 'demo' ? "text-indigo-400 border-indigo-400" : "text-slate-500 border-transparent hover:text-slate-300"
+                "pb-3 text-xs font-semibold transition-colors border-b-2",
+                activeTab === 'demo' ? "text-av-textPrimary border-av-textPrimary" : "text-av-textSecondary border-transparent hover:text-av-textPrimary"
               )}
             >
-              Demo Fixtures
+              Demo Scenarios
             </button>
           </div>
         )}
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto">
+        <div className="p-6 overflow-y-auto bg-av-bg">
           {activeTab === 'demo' && !manifest && uploadStatus !== 'analyzing' && (
-            <form onSubmit={handleDemoSubmit} className="space-y-5">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 font-mono flex items-center justify-between">
-                  <span>TARGET AGENT</span>
-                </label>
+            <form onSubmit={handleDemoSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-av-textSecondary">Target Agent</label>
                 <select
                   value={selectedAgent}
                   onChange={(e) => setSelectedAgent(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-[#0B0F17] border border-slate-700 rounded-xl text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500 transition-colors"
+                  className="w-full px-3 py-2 bg-av-surface border border-av-border rounded-md text-sm text-av-textPrimary focus:outline-none focus:border-av-textSecondary"
                 >
-                  <option value="Customer Support Agent">Vulnerable support fixture (read_tickets, execute_refund)</option>
-                  <option value="Compliant Support Assistant">Policy-respecting support fixture (PASS baseline)</option>
+                  <option value="Customer Support Agent">Customer Support Agent (Vulnerable)</option>
+                  <option value="Compliant Support Assistant">Compliant Support Assistant (Secure)</option>
                 </select>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 font-mono">ATTACK PROFILE</label>
-                <select
-                  value={selectedProfile}
-                  onChange={(e) => setSelectedProfile(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-[#0B0F17] border border-slate-700 rounded-xl text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500 transition-colors"
-                >
-                  <option value="Adaptive Adversarial Testing">Adaptive Adversarial Testing (ASI01 / MCP10)</option>
-                  <option value="State Invariant Fuzzing">State Mutation Fuzzing (Pre/Post DB diff)</option>
-                  <option value="Cascading Loop Testing">Cascading Loop & Retry Storm Testing (ASI08)</option>
-                </select>
-              </div>
-              
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 font-mono">
-                  ENVIRONMENT
-                </label>
-                <select
-                  value={selectedEnv}
-                  onChange={(e) => setSelectedEnv(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-[#0B0F17] border border-slate-700 rounded-xl text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500 transition-colors"
-                >
-                  <option value="Synthetic Sandbox">Synthetic sandbox (isolated fixture state)</option>
-                </select>
-              </div>
-
-              <div className="pt-2 flex items-center justify-end space-x-3">
-                <button type="button" onClick={handleClose} className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors">
+              <div className="flex items-center justify-end space-x-3 pt-2">
+                <button type="button" onClick={handleClose} className="btn-secondary">
                   Cancel
                 </button>
-                <button type="submit" className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-bold rounded-xl flex items-center space-x-2 shadow-lg shadow-indigo-600/30 transition-all">
+                <button type="submit" className="btn-primary space-x-2">
                   <Play className="w-3.5 h-3.5" />
-                  <span>START SCAN</span>
+                  <span>Run Scan</span>
                 </button>
               </div>
             </form>
@@ -211,10 +173,11 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
               
               {uploadStatus === 'idle' && (
                 <>
+                <p className="text-sm text-av-textSecondary mb-2">Scan an AI agent project for tool misuse, indirect prompt injection, and unauthorized actions.</p>
                 <div 
                   className={clsx(
-                    "border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center text-center transition-colors cursor-pointer",
-                    isDragging ? "border-indigo-500 bg-indigo-500/10" : "border-slate-700 hover:border-slate-500 bg-[#0B0F17]"
+                    "border border-dashed rounded-lg p-10 flex flex-col items-center justify-center text-center cursor-pointer transition-colors",
+                    isDragging ? "border-av-textSecondary bg-av-surfaceHover" : "border-av-border hover:border-av-textSecondary bg-av-surface"
                   )}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
@@ -222,26 +185,28 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileSelect} accept=".zip" />
-                  <UploadCloud className={clsx("w-10 h-10 mb-4", isDragging ? "text-indigo-400" : "text-slate-500")} />
-                  <h3 className="text-sm font-bold text-white mb-1">Upload your AI agent project</h3>
-                  <p className="text-xs text-slate-400 mb-4">Drop .zip file here or Browse Files</p>
-                  <p className="text-[10px] text-slate-500 font-mono">Maximum supported archive limits enforced by backend</p>
+                  <UploadCloud className={clsx("w-6 h-6 mb-3", isDragging ? "text-av-textPrimary" : "text-av-textSecondary")} />
+                  <h3 className="text-sm font-semibold text-av-textPrimary mb-1">Upload Project Archive</h3>
+                  <p className="text-xs text-av-textSecondary">Drop a .zip file here or click to browse</p>
                 </div>
                 
                 <div className="relative flex py-2 items-center">
-                    <div className="flex-grow border-t border-slate-700"></div>
-                    <span className="flex-shrink-0 mx-4 text-slate-500 text-xs font-mono">OR</span>
-                    <div className="flex-grow border-t border-slate-700"></div>
+                    <div className="flex-grow border-t border-av-border"></div>
+                    <span className="flex-shrink-0 mx-4 text-av-textMuted text-[10px] uppercase font-bold tracking-wider">OR</span>
+                    <div className="flex-grow border-t border-av-border"></div>
                 </div>
                 
-                <div className="bg-[#0B0F17] border border-slate-700 rounded-xl p-6">
-                    <h3 className="text-sm font-bold text-white mb-4 flex items-center"><Server className="w-4 h-4 mr-2" />Analyze Public GitHub Repository</h3>
+                <div className="bg-av-surface border border-av-border rounded-lg p-5">
+                    <h3 className="text-xs font-semibold text-av-textPrimary mb-3 flex items-center">
+                      <Server className="w-3.5 h-3.5 mr-2 text-av-textSecondary" />
+                      GitHub Repository
+                    </h3>
                     <div className="flex space-x-3">
                         <input 
                             type="text" 
                             id="githubUrlInput"
                             placeholder="https://github.com/owner/repo" 
-                            className="flex-1 bg-[#121824] border border-slate-700 rounded-lg px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono transition-colors"
+                            className="flex-1 bg-av-bg border border-av-border rounded-md px-3 py-2 text-sm text-av-textPrimary focus:outline-none focus:border-av-textSecondary"
                         />
                         <button 
                             onClick={(e) => {
@@ -260,7 +225,7 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
                                     setUploadStatus('error');
                                 });
                             }}
-                            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition-colors shadow-lg shadow-indigo-600/20"
+                            className="btn-primary"
                         >
                             Analyze
                         </button>
@@ -270,23 +235,18 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
               )}
 
               {uploadStatus === 'analyzing' && (
-                <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                  <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">Analyzing Project...</h3>
-                  <div className="text-xs text-slate-400 space-y-2 text-center mt-4">
-                    <p className="flex items-center justify-center space-x-2"><CheckCircle2 className="w-3 h-3 text-emerald-400" /><span>Archive uploaded</span></p>
-                    <p className="flex items-center justify-center space-x-2"><CheckCircle2 className="w-3 h-3 text-emerald-400" /><span>Files extracted securely</span></p>
-                    <p className="flex items-center justify-center space-x-2 text-slate-300"><Loader2 className="w-3 h-3 animate-spin text-indigo-400" /><span>Detecting AgentVeto integrations</span></p>
-                  </div>
+                <div className="flex flex-col items-center justify-center py-16 space-y-4">
+                  <Loader2 className="w-6 h-6 animate-spin text-av-textSecondary" />
+                  <h3 className="text-sm font-semibold text-av-textPrimary">Analyzing Project</h3>
+                  <p className="text-xs text-av-textSecondary">Extracting files and detecting agent integrations...</p>
                 </div>
               )}
 
               {uploadStatus === 'error' && (
-                <div className="bg-red-950/30 border border-red-500/50 rounded-xl p-6 text-center space-y-4">
-                  <AlertCircle className="w-8 h-8 text-red-400 mx-auto" />
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">Project Analysis Failed</h3>
-                  <p className="text-xs text-red-300">{uploadError}</p>
-                  <button onClick={() => setUploadStatus('idle')} className="px-4 py-2 mt-4 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition-colors">
+                <div className="bg-av-vetoBg border border-av-veto/30 rounded-lg p-6 text-center space-y-3">
+                  <h3 className="text-sm font-semibold text-av-veto">Analysis Failed</h3>
+                  <p className="text-sm text-av-veto/80">{uploadError}</p>
+                  <button onClick={() => setUploadStatus('idle')} className="btn-secondary mt-2">
                     Try Again
                   </button>
                 </div>
@@ -295,90 +255,43 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
               {uploadStatus === 'success' && manifest && (
                 <div className="space-y-6">
                   
-                  {/* Informational Security Banner */}
-                  <div className="p-4 rounded-xl bg-indigo-950/20 border border-indigo-500/20 flex items-start space-x-3">
-                    <Shield className="w-5 h-5 text-indigo-400 mt-0.5 shrink-0" />
+                  <div className="flex items-center justify-between pb-4 border-b border-av-border">
                     <div>
-                      <h4 className="text-xs font-bold text-white font-mono tracking-wide mb-1">SECURE ANALYSIS</h4>
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        ✓ AST-based discovery  ✓ No user-code execution  ✓ Synthetic execution environment  ✓ Deterministic security evaluation
-                      </p>
+                      <h3 className="text-base font-semibold text-av-textPrimary">{manifest.project_name || 'Uploaded Project'}</h3>
+                      <p className="text-xs text-av-textSecondary mt-1">Detected Framework: {manifest.integration_type || manifest.language}</p>
+                    </div>
+                    <div className="px-2 py-1 bg-av-passBg text-av-pass rounded flex items-center space-x-1.5 border border-av-pass/20">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider">Ready for Scan</span>
                     </div>
                   </div>
 
-                  {/* Manifest Overview */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-bold text-white">{manifest.project_name || 'Uploaded Project'}</h3>
-                      <p className="text-xs text-slate-400 font-mono mt-1">Supported Integrations: {manifest.integration_type || manifest.language}</p>
-                    </div>
-                    <div className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-center space-x-1.5 text-emerald-400">
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span className="text-xs font-bold">Analysis Complete</span>
-                    </div>
-                  </div>
-
-                  {/* Agents Found */}
                   <div className="space-y-3">
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">Agents Found</h4>
-                    {manifest.agents?.map((agent, i) => (
-                      <div key={i} className="p-4 rounded-xl bg-[#0E131F] border border-slate-700">
-                        <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-xs font-semibold text-av-textSecondary uppercase tracking-wider">Detected Components</h4>
+                    {manifest.agents?.length === 0 ? (
+                       <p className="text-sm text-av-textMuted bg-av-surface p-4 rounded-lg border border-av-border">No agents detected in project.</p>
+                    ) : (
+                      manifest.agents?.map((agent, i) => (
+                        <div key={i} className="p-4 rounded-lg bg-av-surface border border-av-border flex justify-between items-center">
                           <div>
-                            <div className="text-sm font-bold text-white">{agent.name}</div>
-                            <div className="text-[10px] text-slate-400 font-mono mt-0.5">{agent.file}</div>
+                            <div className="text-sm font-semibold text-av-textPrimary">{agent.name}</div>
+                            <div className="text-xs text-av-textSecondary mt-1 font-mono">{agent.file}</div>
                           </div>
-                          <div className="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded-md">
+                          <div className="text-[10px] text-av-textSecondary bg-av-bg border border-av-border px-2 py-0.5 rounded uppercase font-semibold">
                             {agent.tools?.length || 0} tools found
                           </div>
                         </div>
-
-                        {agent.tools?.length > 0 && (
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs font-mono">
-                              <thead>
-                                <tr className="text-slate-500 border-b border-slate-800">
-                                  <th className="pb-2 font-medium">Tool</th>
-                                  <th className="pb-2 font-medium">File</th>
-                                  <th className="pb-2 font-medium">Line</th>
-                                  <th className="pb-2 font-medium">Risk</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-800/50">
-                                {agent.tools.map((tool, j) => {
-                                  const isSink = tool.name.toLowerCase().includes('delete') || tool.name.toLowerCase().includes('update') || tool.name.toLowerCase().includes('execute');
-                                  return (
-                                    <tr key={j} className="text-slate-300">
-                                      <td className="py-2.5 font-bold">{tool.name}</td>
-                                      <td className="py-2.5 text-slate-500">{tool.source_file || agent.file}</td>
-                                      <td className="py-2.5 text-slate-500">{tool.line_number || '-'}</td>
-                                      <td className="py-2.5">
-                                        <span className={clsx(
-                                          "px-2 py-0.5 rounded text-[10px] font-bold border",
-                                          isSink ? "bg-red-500/10 border-red-500/30 text-red-400" : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                                        )}>
-                                          {isSink ? 'SINK' : 'SOURCE'}
-                                        </span>
-                                      </td>
-                                    </tr>
-                                  )
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
 
-                  {/* Actions */}
-                  <div className="pt-4 flex items-center justify-between border-t border-slate-800">
-                    <button type="button" onClick={() => setUploadStatus('idle')} className="text-xs font-semibold text-slate-400 hover:text-white transition-colors">
-                      Upload Different Project
+                  <div className="pt-4 flex items-center justify-between">
+                    <button type="button" onClick={() => setUploadStatus('idle')} className="text-xs font-semibold text-av-textSecondary hover:text-av-textPrimary">
+                      Back
                     </button>
-                    <button onClick={handleStartManifestScan} className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-bold rounded-xl flex items-center space-x-2 shadow-lg shadow-indigo-600/30 transition-all">
-                      <Play className="w-4 h-4" />
-                      <span>RUN SECURITY SCAN</span>
+                    <button onClick={handleStartManifestScan} className="btn-primary space-x-1.5">
+                      <Play className="w-3.5 h-3.5" />
+                      <span>Run Scan</span>
                     </button>
                   </div>
 

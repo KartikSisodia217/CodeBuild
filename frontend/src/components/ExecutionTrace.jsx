@@ -11,7 +11,7 @@ export default function ExecutionTrace({ trace, evaluation }) {
 
   if (!trace || !trace.spans) {
     return (
-      <div className="p-8 text-center text-slate-500 font-mono text-xs">
+      <div className="p-8 text-center text-av-textMuted font-mono text-xs">
         No execution trace recorded.
       </div>
     );
@@ -90,7 +90,7 @@ export default function ExecutionTrace({ trace, evaluation }) {
   });
 
   // Final Gate Event if VETO
-  if (evaluation?.status === 'CRITICAL_VETO') {
+  if (evaluation?.status === 'CRITICAL_VETO' || evaluation?.verdict === 'VETO') {
     timelineEvents.push({
       id: "evt_sandbox",
       time: "02.02s",
@@ -103,13 +103,13 @@ export default function ExecutionTrace({ trace, evaluation }) {
       time: "02.14s",
       kind: "POLICY",
       name: `${evaluation.threat_category || 'ASI01'} Invariant Violation`,
-      content: evaluation.reason
+      content: evaluation.reason || "Policy invariant violated"
     });
     timelineEvents.push({
       id: "evt_gate",
       time: "02.15s",
       kind: "GATE",
-      name: "🔴 DETERMINISTIC VETO",
+      name: "DETERMINISTIC VETO",
       content: "Build halted. CI/CD exit code 1 triggered."
     });
   }
@@ -119,57 +119,56 @@ export default function ExecutionTrace({ trace, evaluation }) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between pb-2 border-b border-[#1F293D]">
+    <div className="space-y-4 max-w-4xl">
+      <div className="flex items-center justify-between pb-2 border-b border-av-border">
         <div>
-          <h3 className="text-xs font-bold font-mono text-slate-400 uppercase tracking-wider">
-            OpenInference Execution Trace & Telemetry Stream
+          <h3 className="text-sm font-semibold text-av-textPrimary">
+            Execution Timeline
           </h3>
-          <p className="text-[11px] text-slate-500 font-mono">Run ID: {trace.run_id}</p>
         </div>
-        <span className="text-[11px] font-mono text-slate-500 bg-[#0E131F] px-2.5 py-1 rounded-lg border border-[#1F293D]">
-          {timelineEvents.length} Captured Events
+        <span className="text-xs font-mono text-av-textMuted">
+          {timelineEvents.length} Events
         </span>
       </div>
 
-      <div className="rounded-2xl bg-[#0E131F] border border-[#1F293D] divide-y divide-[#1F293D]/70 overflow-hidden shadow-xl">
+      <div className="rounded-xl bg-av-surface border border-av-border divide-y divide-av-borderLight shadow-subtle overflow-hidden">
         {timelineEvents.map((evt) => {
           const isExpanded = expandedSpanId === evt.id;
           const isVetoGate = evt.kind === 'GATE';
           const isAttack = evt.kind === 'ATTACK';
           const isSink = evt.isSink;
+          const isPolicy = evt.kind === 'POLICY';
 
           return (
-            <div key={evt.id} className="transition-colors">
+            <div key={evt.id} className="transition-colors group">
               
               {/* Timeline Header Row */}
               <div 
                 onClick={() => toggleExpand(evt.id)}
                 className={clsx(
-                  "p-3.5 flex items-center justify-between cursor-pointer hover:bg-[#151B28] select-none",
-                  isVetoGate ? "bg-red-950/15" : isAttack ? "bg-amber-950/15" : ""
+                  "p-3 flex items-center justify-between cursor-pointer hover:bg-av-surfaceHover select-none transition-colors",
+                  isVetoGate || isPolicy ? "bg-av-vetoBg" : isAttack ? "bg-av-warnBg" : ""
                 )}
               >
-                <div className="flex items-center space-x-3">
-                  <span className="text-xs font-mono text-slate-400 w-14 font-semibold">
+                <div className="flex items-center space-x-4">
+                  <span className="text-xs font-mono text-av-textMuted w-12 text-right">
                     {evt.time}
                   </span>
 
                   <span className={clsx(
-                    "px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border",
-                    evt.kind === 'GATE' ? "bg-red-500/20 text-red-400 border-red-500/40" :
-                    evt.kind === 'POLICY' ? "bg-red-500/10 text-red-300 border-red-500/30" :
-                    evt.kind === 'ATTACK' ? "bg-amber-500/20 text-amber-400 border-amber-500/40" :
-                    evt.kind === 'TOOL' ? (isSink ? "bg-red-500/10 text-red-300 border-red-500/30" : "bg-indigo-500/10 text-indigo-300 border-indigo-500/30") :
-                    evt.kind === 'LLM' ? "bg-purple-500/10 text-purple-300 border-purple-500/30" :
-                    "bg-[#1A2234] text-slate-300 border-slate-700"
+                    "px-2 py-0.5 rounded text-[10px] font-mono font-semibold border",
+                    isVetoGate || isPolicy ? "bg-[#2A1114] text-av-veto border-av-veto/30" :
+                    isAttack ? "bg-[#251A0D] text-av-warn border-av-warn/30" :
+                    evt.kind === 'TOOL' ? (isSink ? "bg-[#2A1114] text-av-veto border-av-veto/30" : "bg-av-bg text-av-textSecondary border-av-borderLight") :
+                    evt.kind === 'LLM' ? "bg-av-bg text-av-textPrimary border-av-borderLight" :
+                    "bg-av-bg text-av-textMuted border-transparent"
                   )}>
                     {evt.kind}
                   </span>
 
                   <span className={clsx(
-                    "text-xs font-bold font-mono tracking-wide",
-                    isVetoGate ? "text-red-400" : isAttack ? "text-amber-300" : isSink ? "text-red-300" : "text-white"
+                    "text-sm font-medium",
+                    isVetoGate || isPolicy || isSink ? "text-av-veto" : isAttack ? "text-av-warn" : "text-av-textPrimary"
                   )}>
                     {evt.name}
                   </span>
@@ -178,75 +177,75 @@ export default function ExecutionTrace({ trace, evaluation }) {
                 <div className="flex items-center space-x-3">
                   {evt.classification && (
                     <span className={clsx(
-                      "text-[10px] font-mono font-bold px-2 py-0.5 rounded",
-                      evt.classification === 'DATA SINK' ? "bg-red-500/20 text-red-400 border border-red-500/30" : "bg-[#1A2234] text-slate-400 border border-slate-700"
+                      "text-[10px] font-mono font-medium px-2 py-0.5 rounded border hidden sm:inline-block uppercase",
+                      evt.classification === 'DATA SINK' ? "bg-[#2A1114] text-av-veto border-av-veto/30" : "bg-av-bg text-av-textMuted border-av-border"
                     )}>
                       {evt.classification}
                     </span>
                   )}
-                  {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-600" />}
+                  {isExpanded ? <ChevronDown className="w-4 h-4 text-av-textMuted" /> : <ChevronRight className="w-4 h-4 text-av-borderLight group-hover:text-av-textMuted" />}
                 </div>
               </div>
 
               {/* Detailed Card View when expanded */}
               {isExpanded && (
-                <div className="p-4 bg-[#080D17] border-t border-[#1F293D] space-y-3 font-mono text-xs">
+                <div className="p-4 bg-av-bg border-t border-av-borderLight space-y-3 font-mono text-xs text-av-textSecondary">
                   
                   {/* Tool Specific Details */}
                   {evt.kind === 'TOOL' && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
-                      <div className="p-2 rounded bg-[#0E131F] border border-[#1F293D]">
-                        <span className="text-[10px] text-slate-500 uppercase font-semibold">Risk Level</span>
-                        <div className={clsx("font-bold text-xs", evt.risk === 'HIGH' ? "text-red-400" : "text-slate-300")}>{evt.risk}</div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
+                      <div>
+                        <span className="text-[10px] text-av-textMuted uppercase font-semibold">Risk Level</span>
+                        <div className={clsx("font-medium mt-0.5 text-xs", evt.risk === 'HIGH' ? "text-av-veto" : "text-av-textPrimary")}>{evt.risk}</div>
                       </div>
-                      <div className="p-2 rounded bg-[#0E131F] border border-[#1F293D]">
-                        <span className="text-[10px] text-slate-500 uppercase font-semibold">Intercepted</span>
-                        <div className="font-bold text-xs text-emerald-400">{evt.intercepted}</div>
+                      <div>
+                        <span className="text-[10px] text-av-textMuted uppercase font-semibold">Intercepted</span>
+                        <div className="font-medium mt-0.5 text-xs text-av-textPrimary">{evt.intercepted}</div>
                       </div>
-                      <div className="p-2 rounded bg-[#0E131F] border border-[#1F293D]">
-                        <span className="text-[10px] text-slate-500 uppercase font-semibold">Executed on Target</span>
-                        <div className={clsx("font-bold text-xs", evt.executed.includes('BLOCKED') ? "text-red-400 font-bold" : "text-slate-300")}>{evt.executed}</div>
+                      <div>
+                        <span className="text-[10px] text-av-textMuted uppercase font-semibold">Executed on Target</span>
+                        <div className={clsx("font-medium mt-0.5 text-xs", evt.executed.includes('BLOCKED') ? "text-av-veto" : "text-av-textPrimary")}>{evt.executed}</div>
                       </div>
-                      <div className="p-2 rounded bg-[#0E131F] border border-[#1F293D]">
-                        <span className="text-[10px] text-slate-500 uppercase font-semibold">Sandbox</span>
-                        <div className="font-bold text-xs text-indigo-300">{evt.sandbox}</div>
+                      <div>
+                        <span className="text-[10px] text-av-textMuted uppercase font-semibold">Sandbox</span>
+                        <div className="font-medium mt-0.5 text-xs text-av-textPrimary">{evt.sandbox}</div>
                       </div>
                     </div>
                   )}
 
                   {/* Injection Specific Details */}
                   {evt.kind === 'ATTACK' && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
-                      <div className="p-2 rounded bg-[#0E131F] border border-[#1F293D]">
-                        <span className="text-[10px] text-slate-500 uppercase font-semibold">Source Tool</span>
-                        <div className="font-bold text-xs text-amber-400">{evt.source}</div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
+                      <div>
+                        <span className="text-[10px] text-av-textMuted uppercase font-semibold">Source Tool</span>
+                        <div className="font-medium mt-0.5 text-xs text-av-textPrimary">{evt.source}</div>
                       </div>
-                      <div className="p-2 rounded bg-[#0E131F] border border-[#1F293D]">
-                        <span className="text-[10px] text-slate-500 uppercase font-semibold">Type</span>
-                        <div className="font-bold text-xs text-slate-300">{evt.type}</div>
+                      <div>
+                        <span className="text-[10px] text-av-textMuted uppercase font-semibold">Type</span>
+                        <div className="font-medium mt-0.5 text-xs text-av-textPrimary">{evt.type}</div>
                       </div>
-                      <div className="p-2 rounded bg-[#0E131F] border border-[#1F293D]">
-                        <span className="text-[10px] text-slate-500 uppercase font-semibold">Threat Code</span>
-                        <div className="font-bold text-xs text-red-400">{evt.threat}</div>
+                      <div>
+                        <span className="text-[10px] text-av-textMuted uppercase font-semibold">Threat Code</span>
+                        <div className="font-medium mt-0.5 text-xs text-av-textPrimary">{evt.threat}</div>
                       </div>
-                      <div className="p-2 rounded bg-[#0E131F] border border-[#1F293D]">
-                        <span className="text-[10px] text-slate-500 uppercase font-semibold">Agent Influenced</span>
-                        <div className="font-bold text-xs text-amber-400">{evt.agentInfluenced}</div>
+                      <div>
+                        <span className="text-[10px] text-av-textMuted uppercase font-semibold">Agent Influenced</span>
+                        <div className="font-medium mt-0.5 text-xs text-av-textPrimary">{evt.agentInfluenced}</div>
                       </div>
                     </div>
                   )}
 
                   <div>
-                    <span className="text-[10px] text-slate-500 uppercase font-semibold">Payload / Event Metadata</span>
-                    <pre className="mt-1 p-2.5 rounded-lg bg-[#050811] border border-[#1F293D] text-slate-300 overflow-x-auto whitespace-pre-wrap leading-relaxed">
+                    <span className="text-[10px] text-av-textMuted uppercase font-semibold">Payload / Event Data</span>
+                    <pre className="mt-1 p-3 rounded bg-av-surface border border-av-borderLight text-av-textPrimary overflow-x-auto whitespace-pre-wrap leading-relaxed shadow-sm">
                       {typeof evt.content === 'object' ? JSON.stringify(evt.content, null, 2) : String(evt.content)}
                     </pre>
                   </div>
 
                   {evt.response && (
                     <div>
-                      <span className="text-[10px] text-slate-500 uppercase font-semibold">Intercepted Output Value</span>
-                      <pre className="mt-1 p-2.5 rounded-lg bg-[#050811] border border-[#1F293D] text-emerald-400 overflow-x-auto whitespace-pre-wrap leading-relaxed">
+                      <span className="text-[10px] text-av-textMuted uppercase font-semibold">Intercepted Output</span>
+                      <pre className="mt-1 p-3 rounded bg-av-surface border border-av-borderLight text-av-textPrimary overflow-x-auto whitespace-pre-wrap leading-relaxed shadow-sm">
                         {typeof evt.response === 'object' ? JSON.stringify(evt.response, null, 2) : String(evt.response)}
                       </pre>
                     </div>

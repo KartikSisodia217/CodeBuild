@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle2, 
-  XCircle, 
-  AlertTriangle, 
-  ShieldAlert, 
-  ShieldCheck, 
   Loader2, 
-  Activity, 
-  Crosshair,
-  ArrowRight
+  ArrowRight,
+  Circle
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -17,20 +12,15 @@ export default function ScanProgress({ scanConfig, scanResult, onComplete }) {
 
   const attempts = scanResult?.threat_model?.attempts || [];
   const evaluation = scanResult?.evaluation || {};
-  const isVeto = scanResult?.verdict === 'VETO';
 
   const steps = [
-    { title: "Controlled fixture initialized", detail: scanResult?.metadata?.fixture_disclosure || `${scanConfig.agent_name} configured` },
-    { title: "Tool schemas modeled", detail: "Source and restricted sink capabilities analyzed deterministically" },
+    { title: "Initializing environment", detail: scanResult?.metadata?.fixture_disclosure || `${scanConfig.agent_name} configured` },
+    { title: "Modeling agent capabilities", detail: "Analyzing tools and state transitions" },
     ...attempts.map((attempt) => ({
-      title: `Adversarial simulation: attempt ${attempt.attempt_number}`,
+      title: `Testing attack payload ${attempt.attempt_number}`,
       detail: attempt.strategy || 'Bounded payload mutation',
-      outcome: attempt.result,
-      status: attempt.status,
     })),
-    { title: "High-risk sink evaluation", detail: evaluation.details?.high_risk_sink_reached ? "Restricted sink attempt observed in the synthetic sandbox" : "No restricted sink attempt observed" },
-    { title: "State evaluation", detail: evaluation.details?.unauthorized_state_change ? "Unauthorized synthetic state change recorded" : "No unauthorized synthetic state changes recorded" },
-    { title: "Deterministic policy adjudication", detail: evaluation.reason || "Policy invariants evaluated" }
+    { title: "Evaluating results", detail: evaluation.reason || "Checking policy invariants" }
   ];
 
   useEffect(() => {
@@ -45,33 +35,29 @@ export default function ScanProgress({ scanConfig, scanResult, onComplete }) {
       }, 800);
       return () => clearTimeout(completeTimer);
     }
-  }, [currentStep]);
+  }, [currentStep, steps.length, onComplete]);
 
   return (
-    <div className="flex-1 flex items-center justify-center bg-[#0B0F17] p-8 select-none">
-      <div className="w-full max-w-2xl rounded-2xl bg-[#121824] border border-slate-800 shadow-2xl p-8 space-y-6">
+    <div className="flex-1 flex items-center justify-center bg-av-bg p-8 select-none">
+      <div className="w-full max-w-lg bg-av-surface rounded-xl shadow-modal border border-av-border p-8 space-y-6">
         
         {/* Header */}
-        <div className="flex items-center justify-between pb-6 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-6 border-b border-av-border">
           <div>
-            <div className="flex items-center space-x-2 text-xs font-mono text-indigo-400 mb-1">
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
-              <span>SECURITY SCAN RUNNING</span>
-            </div>
-            <h2 className="text-xl font-bold text-white tracking-tight">{scanConfig.agent_name}</h2>
-            <p className="text-xs text-slate-400 font-mono">Profile: {scanConfig.attack_profile}</p>
+            <h2 className="text-sm font-semibold text-av-textPrimary tracking-tight">Security Scan in Progress</h2>
+            <p className="text-xs font-mono text-av-textSecondary mt-1">{scanConfig.agent_name}</p>
           </div>
 
           <button
             onClick={onComplete}
-            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 transition-colors"
+            className="text-xs font-medium text-av-textMuted hover:text-av-textPrimary transition-colors"
           >
-            Skip to Result →
+            Skip →
           </button>
         </div>
 
         {/* Progression Steps */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           {steps.map((step, idx) => {
             const isFinished = currentStep > idx;
             const isCurrent = currentStep === idx;
@@ -81,45 +67,28 @@ export default function ScanProgress({ scanConfig, scanResult, onComplete }) {
               <div 
                 key={idx}
                 className={clsx(
-                  "p-3 rounded-xl border transition-all flex items-center justify-between",
-                  isFinished ? "bg-slate-900/40 border-slate-800/80 text-slate-300" :
-                  isCurrent ? "bg-indigo-950/20 border-indigo-500/40 text-white shadow-md shadow-indigo-500/10" :
-                  "opacity-30 border-transparent text-slate-600"
+                  "flex items-start space-x-3 transition-opacity",
+                  isPending ? "opacity-30" : "opacity-100"
                 )}
               >
-                <div className="flex items-center space-x-3">
-                  <div className="w-5 h-5 flex items-center justify-center shrink-0">
-                    {isFinished ? (
-                      step.status === 'refused' ? (
-                        <span className="text-slate-400 text-xs font-mono font-bold">❌</span>
-                      ) : step.status === 'influenced' ? (
-                        <span className="text-amber-400 text-xs font-mono font-bold">⚠️</span>
-                      ) : (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                      )
-                    ) : isCurrent ? (
-                      <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
-                    ) : (
-                      <div className="w-2 h-2 rounded-full bg-slate-700" />
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="text-xs font-bold font-mono tracking-wide">{step.title}</div>
-                    <div className="text-[10px] text-slate-400">{step.detail}</div>
-                  </div>
+                <div className="mt-0.5 w-4 h-4 flex items-center justify-center shrink-0">
+                  {isFinished ? (
+                    <CheckCircle2 className="w-4 h-4 text-av-textMuted" />
+                  ) : isCurrent ? (
+                    <Loader2 className="w-4 h-4 text-av-textPrimary animate-spin-slow" />
+                  ) : (
+                    <Circle className="w-3 h-3 text-av-borderLight" />
+                  )}
                 </div>
 
-                {isFinished && step.outcome && (
-                  <div className={clsx(
-                    "px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border",
-                    step.status === 'refused' ? "bg-slate-800 text-slate-400 border-slate-700" :
-                    step.status === 'influenced' ? "bg-amber-500/20 text-amber-400 border-amber-500/30 animate-pulse" :
-                    "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                  )}>
-                    {step.outcome}
+                <div>
+                  <div className={clsx("text-sm font-semibold", isCurrent ? "text-av-textPrimary" : "text-av-textSecondary")}>
+                    {step.title}
                   </div>
-                )}
+                  {(isCurrent || isFinished) && step.detail && (
+                    <div className="text-xs text-av-textMuted mt-1 font-mono">{step.detail}</div>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -127,33 +96,12 @@ export default function ScanProgress({ scanConfig, scanResult, onComplete }) {
 
         {/* Final Decision Banner when finished */}
         {currentStep >= steps.length && (
-          <div className={clsx(
-            "p-4 rounded-xl border flex items-center justify-between animate-fadeIn",
-            isVeto
-              ? "bg-red-950/30 border-red-500/50 text-red-300"
-              : "bg-emerald-950/30 border-emerald-500/50 text-emerald-300"
-          )}>
-            <div className="flex items-center space-x-3">
-              {isVeto ? (
-                <ShieldAlert className="w-6 h-6 text-red-400" />
-              ) : (
-                <ShieldCheck className="w-6 h-6 text-emerald-400" />
-              )}
-              <div>
-                <div className="text-sm font-black font-mono uppercase">
-                  {isVeto ? '🔴 BUILD VETOED' : '🟢 BUILD PASSED'}
-                </div>
-                <div className="text-xs text-slate-400">
-                  {evaluation.reason || (isVeto ? 'Deterministic policy violation proven.' : 'No exploitable policy violations detected.')}
-                </div>
-              </div>
-            </div>
-
+          <div className="pt-4 border-t border-av-border flex justify-end">
             <button
               onClick={onComplete}
-              className="px-4 py-2 bg-white text-slate-950 hover:bg-slate-200 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-colors"
+              className="btn-primary space-x-2"
             >
-              <span>View Run Details</span>
+              <span>View Results</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
