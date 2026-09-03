@@ -51,11 +51,12 @@ Frontend implementation for uploading projects (reserved for the next agent/phas
 
 ## Architectural Discoveries
 
-- We can leverage `DeterministicFixtureRunner` to run a synthetic trace with dynamically discovered tool definitions. This allows us to use the real AgentVeto security engine without ever importing or executing untrusted user code.
+- Discovered that the previous `DeterministicFixtureRunner` fallback for uploaded projects produced a false-positive synthetic PASS for non-agentic projects (like Legal.ai, which is a RAG app).
+- Removed the false-positive/synthetic-upload fallback. Uploaded projects now correctly return typed results indicating whether they are unsupported or non-agentic, rather than generating synthetic security scans. Legal.ai was correctly identified as a non-agentic RAG project.
 
 ## Blockers
 
-- None for the backend. Node.js is required for the upcoming frontend work.
+- None. Node.js is required for the upcoming frontend work.
 
 ## FINAL STATUS
 

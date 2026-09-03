@@ -210,6 +210,7 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
             <div className="space-y-6">
               
               {uploadStatus === 'idle' && (
+                <>
                 <div 
                   className={clsx(
                     "border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center text-center transition-colors cursor-pointer",
@@ -226,6 +227,46 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
                   <p className="text-xs text-slate-400 mb-4">Drop .zip file here or Browse Files</p>
                   <p className="text-[10px] text-slate-500 font-mono">Maximum supported archive limits enforced by backend</p>
                 </div>
+                
+                <div className="relative flex py-2 items-center">
+                    <div className="flex-grow border-t border-slate-700"></div>
+                    <span className="flex-shrink-0 mx-4 text-slate-500 text-xs font-mono">OR</span>
+                    <div className="flex-grow border-t border-slate-700"></div>
+                </div>
+                
+                <div className="bg-[#0B0F17] border border-slate-700 rounded-xl p-6">
+                    <h3 className="text-sm font-bold text-white mb-4 flex items-center"><Server className="w-4 h-4 mr-2" />Analyze Public GitHub Repository</h3>
+                    <div className="flex space-x-3">
+                        <input 
+                            type="text" 
+                            id="githubUrlInput"
+                            placeholder="https://github.com/owner/repo" 
+                            className="flex-1 bg-[#121824] border border-slate-700 rounded-lg px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono transition-colors"
+                        />
+                        <button 
+                            onClick={(e) => {
+                                const url = document.getElementById('githubUrlInput').value;
+                                if (!url) return;
+                                setUploadStatus('analyzing');
+                                setUploadError(null);
+                                axios.post('http://127.0.0.1:8000/api/projects/analyze/github', {
+                                    source_type: "github",
+                                    repository_url: url
+                                }).then(res => {
+                                    setManifest(res.data);
+                                    setUploadStatus('success');
+                                }).catch(err => {
+                                    setUploadError(err.response?.data?.detail || 'Failed to analyze repository. Please try again.');
+                                    setUploadStatus('error');
+                                });
+                            }}
+                            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition-colors shadow-lg shadow-indigo-600/20"
+                        >
+                            Analyze
+                        </button>
+                    </div>
+                </div>
+                </>
               )}
 
               {uploadStatus === 'analyzing' && (

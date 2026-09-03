@@ -1,30 +1,24 @@
 # Next Agent Instruction
 
 ## Current State
-Project Ingestion and User Project Scanning have been fully implemented in the backend. 
-- Created `backend/agentveto/ingestion/` with `extractor.py` and `discovery.py` to safely unzip and perform AST-based static analysis of user code.
-- Added `/api/projects/analyze` endpoint for project uploading and analysis.
-- Modified `/api/scan` to support synthetic scans of uploaded projects without executing arbitrary code, maintaining strict isolation.
-- Added `tests/test_project_ingestion.py` which passes successfully along with the entire backend suite (61 tests total).
+Project Ingestion has been hardened, and bugs related to False Agentic Positives (Legal.ai) and GitHub SSL fetch errors have been resolved.
+- `backend/agentveto/ingestion/discovery.py` now uses stricter checking (`langchain.agents`, `langgraph`, `crewai`, `@tool`) avoiding misclassifying standard RAG/LLM scripts as agents.
+- `backend/agentveto/ingestion/github.py` now uses `httpx.stream` to bypass macOS local issuer SSL errors that occur natively in `urllib`, and strictly propagates 404, 403, and 429 status codes as proper `ExtractionError` messages for the frontend.
+- `tests/test_github_ingestion.py` was adapted to mock `httpx` properly. All 77 tests in the backend suite pass.
 
 ## Files Changed
-- `backend/main.py`
-- `backend/agentveto/contracts/schemas.py`
-- `backend/agentveto/runtime.py`
-- `backend/agentveto/ingestion/__init__.py` (new)
-- `backend/agentveto/ingestion/extractor.py` (new)
-- `backend/agentveto/ingestion/discovery.py` (new)
-- `tests/test_project_ingestion.py` (new)
-- `requirements.txt` (added `python-multipart`)
+- `backend/agentveto/ingestion/discovery.py`
+- `backend/agentveto/ingestion/github.py`
+- `tests/test_github_ingestion.py`
+- `frontend/src/components/NewScanModal.jsx` (JSX syntax fix)
 
 ## Remaining Work
-The backend now correctly supports safe user project ingestion and deterministic synthetic scans. The next phase must focus on integrating this backend functionality into the Frontend React UI. 
-- Create a UI to upload a ZIP file.
-- Call `/api/projects/analyze` to display the `ProjectManifest`.
-- Trigger `/api/scan` with the manifest.
-- Update demo selectors.
+The static ingestion and parsing system is now fully complete and correctly isolates Agentic components and distinguishes them from actual `AgentVeto` integrations. `Legal.ai.zip` now accurately reports `NOT_AGENTIC`, and `Innovahack_LedgerAI` reports `UNSUPPORTED`.
+However, **arbitrary execution is still NOT IMPLEMENTED**. 
+When a supported `ProjectManifest` requests a security scan via `/api/scan`, the backend raises a `501 Not Implemented`.
 
 ## Next Recommended Actions
-1. Install Node.js dependencies in the frontend and configure the build process if needed.
-2. Build the project ingestion UI in `frontend/src/` to interact with `/api/projects/analyze`.
-3. Do NOT execute or require frontend changes outside of the UI scope.
+The next logical step is to implement the real target agent sandbox orchestrator.
+1. Build a Docker or microVM orchestrator inside `backend/agentveto/sandbox/`.
+2. Connect `/api/scan` to instantiate this container for supported projects.
+3. Inject the `AgentVeto` python adapter, execute the agent's entry point, capture telemetry/trajectories, and generate the final Evidence DAG.

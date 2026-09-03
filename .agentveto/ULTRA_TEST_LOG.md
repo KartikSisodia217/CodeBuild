@@ -44,7 +44,7 @@ PYTHONPATH=backend python3 -m pytest tests/test_project_ingestion.py
 - `test_malicious_archive_traversal`: Protects against `../../` attacks.
 - `test_absolute_path_archive`: Protects against absolute paths.
 - `test_oversized_file`: Validates ZIP bomb protections.
-- `test_uploaded_project_scan`: Validates synthetic `StartScanRequest` correctly evaluates the extracted manifest.
+- `tests/test_upload_fallback.py`: Validates that uploaded unsupported projects or non-agentic projects (like Legal.ai) correctly return `UNSUPPORTED` or `NOT_AGENTIC` statuses without executing a synthetic fake PASS trace.
 
 ### Results
-- Passed: 61/61 backend tests. All legacy demos and endpoints continue to operate perfectly.
+- Passed: 68/68 backend tests. All legacy demos and endpoints continue to operate perfectly. False-positive upload bypass was successfully removed.
