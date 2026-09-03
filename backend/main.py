@@ -162,8 +162,82 @@ def list_scenarios():
 @app.post("/api/scan")
 def start_scan_endpoint(req: StartScanRequest):
     if req.project_manifest:
-        from agentveto.runtime import _fixture_runner
-        details = _fixture_runner.run_project(req.project_manifest)
+        if not req.project_manifest.agentic:
+            details = {
+                "scenario_id": f"proj_{req.project_manifest.project_name}",
+                "metadata": {
+                    "id": f"proj_{req.project_manifest.project_name}",
+                    "name": req.project_manifest.project_name,
+                    "agent_name": "Unknown",
+                },
+                "evaluation": {
+                    "status": "NOT_AGENTIC",
+                    "reason": "No agentic component was detected in this project."
+                }
+            }
+            return {
+                "status": "not_agentic",
+                "reason": "no_agent_detected",
+                "message": "No agentic component was detected in this project.",
+                "scenario_details": details
+            }
+        if not req.project_manifest.supported:
+            details = {
+                "scenario_id": f"proj_{req.project_manifest.project_name}",
+                "metadata": {
+                    "id": f"proj_{req.project_manifest.project_name}",
+                    "name": req.project_manifest.project_name,
+                    "agent_name": req.project_manifest.agents[0].name if req.project_manifest.agents else "Unknown",
+                },
+                "evaluation": {
+                    "status": "UNSUPPORTED",
+                    "reason": "Project analyzed, but no supported AgentVeto runtime integration was detected."
+                }
+            }
+            return {
+                "status": "unsupported",
+                "reason": "no_supported_integration",
+                "message": "Project analyzed, but no supported AgentVeto runtime integration was detected.",
+                "scenario_details": details
+            }
+        
+        if req.project_manifest.integration_type == "langgraph":
+            if req.project_manifest.source_type != "local_fixture":
+                details = {
+                    "scenario_id": f"proj_{req.project_manifest.project_name}",
+                    "metadata": {
+                        "id": f"proj_{req.project_manifest.project_name}",
+                        "name": req.project_manifest.project_name,
+                        "agent_name": "LangGraph Agent",
+                    },
+                    "evaluation": {
+                        "status": "EXECUTION_UNAVAILABLE",
+                        "reason": "LangGraph adapter detected, but secure execution environment is required for untrusted projects."
+                    }
+                }
+                return {
+                    "status": "unsafe_to_execute",
+                    "reason": "secure_runtime_required",
+                    "message": "LangGraph adapter detected, but secure execution environment is required for untrusted projects.",
+                    "scenario_details": details
+                }
+            else:
+                from agentveto.adapters.langgraph_adapter import run_langgraph_fixture
+                details = run_langgraph_fixture(req.project_manifest.repository)
+                _record_evaluation(details["evaluation"])
+                return {
+                    "status": "completed",
+                    "scan_id": details["trace"].run_id,
+                    "agent_name": req.agent_name,
+                    "attack_profile": req.attack_profile,
+                    "environment": req.environment,
+                    "scenario_details": details
+                }
+                
+        raise HTTPException(
+            status_code=501,
+            detail="Real runtime execution engine is not yet implemented for uploaded projects."
+        )
     else:
         scenario_id = req.scenario_id or "zero_click_echoleak"
         try:
@@ -178,7 +252,7 @@ def start_scan_endpoint(req: StartScanRequest):
     return {
         "status": "completed",
         "scan_id": details["trace"].run_id,
-        "agent_name": req.project_manifest.project_name if req.project_manifest else req.agent_name,
+        "agent_name": req.agent_name,
         "attack_profile": req.attack_profile,
         "environment": req.environment,
         "scenario_details": details
@@ -199,10 +273,47 @@ def get_scenario_details(scenario_id: str):
 
 import tempfile
 import shutil
-from fastapi import File, UploadFile
+import os
+from fastapi import File, UploadFile, Form
+from pydantic import BaseModel, HttpUrl
 from agentveto.contracts.schemas import ProjectManifest
 from agentveto.ingestion.extractor import safe_extract, ExtractionError
 from agentveto.ingestion.discovery import discover_project
+from agentveto.ingestion.github import fetch_github_repo
+
+class GithubAnalyzeRequest(BaseModel):
+    source_type: str = "github"
+    repository_url: str
+
+@app.post("/api/projects/analyze/github", response_model=ProjectManifest)
+async def analyze_github_project(req: GithubAnalyzeRequest):
+    if req.source_type != "github":
+        raise HTTPException(status_code=400, detail="Invalid source type.")
+        
+    temp_dir = tempfile.mkdtemp()
+    extract_dir = f"{temp_dir}/extracted"
+    os.makedirs(extract_dir, exist_ok=True)
+    
+    try:
+        try:
+            repository, revision = fetch_github_repo(req.repository_url, extract_dir)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except ExtractionError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail="Failed to fetch repository.")
+            
+        manifest = discover_project(
+            extract_dir, 
+            project_name=repository.split('/')[-1],
+            source_type="github",
+            repository=repository,
+            revision=revision
+        )
+        return manifest
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
 
 @app.post("/api/projects/analyze", response_model=ProjectManifest)
 async def analyze_project(file: UploadFile = File(...)):
@@ -222,12 +333,14 @@ async def analyze_project(file: UploadFile = File(...)):
         except ExtractionError as e:
             raise HTTPException(status_code=400, detail=str(e))
             
-        manifest = discover_project(extract_dir, project_name=file.filename)
+        manifest = discover_project(
+            extract_dir, 
+            project_name=file.filename,
+            source_type="zip"
+        )
         return manifest
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
-
-
 
 if __name__ == "__main__":
     import uvicorn

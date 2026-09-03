@@ -28,6 +28,10 @@ export default function RunOverview({ data, onSwitchTab }) {
   const injectionSource = evaluation.injection_source_span_id || data.attack_analysis?.injection_point || 'None observed';
   const highRiskSink = evaluation.violating_tool || (evaluation.details?.high_risk_sink_reached ? data.attack_analysis?.high_risk_sink : 'None reached');
 
+  const isUnsupported = evaluation.status === 'UNSUPPORTED';
+  const isNotAgentic = evaluation.status === 'NOT_AGENTIC';
+  const isNotScanned = isUnsupported || isNotAgentic;
+
   return (
     <div className="space-y-6">
       
@@ -38,6 +42,8 @@ export default function RunOverview({ data, onSwitchTab }) {
           ? "bg-gradient-to-r from-red-950/30 via-[#130B0F] to-[#130B0F] border-red-500/40 glow-red" 
           : isPass 
           ? "bg-gradient-to-r from-emerald-950/30 via-[#091512] to-[#091512] border-emerald-500/40 glow-emerald"
+          : isNotScanned
+          ? "bg-gradient-to-r from-slate-900 via-[#0B0F15] to-[#0B0F15] border-slate-700/40 glow-slate"
           : "bg-gradient-to-r from-amber-950/30 via-[#161208] to-[#161208] border-amber-500/40 glow-amber"
       )}>
         {/* Animated Cyber Scan Beam */}
@@ -48,22 +54,25 @@ export default function RunOverview({ data, onSwitchTab }) {
             "w-14 h-14 rounded-2xl flex items-center justify-center border shadow-lg shrink-0",
             isVeto ? "bg-red-500/15 border-red-500/35 text-red-400" :
             isPass ? "bg-emerald-500/15 border-emerald-500/35 text-emerald-400" :
+            isNotScanned ? "bg-slate-500/15 border-slate-500/35 text-slate-400" :
             "bg-amber-500/15 border-amber-500/35 text-amber-400"
           )}>
             {isVeto ? <ShieldAlert className="w-7 h-7 animate-pulse" /> :
              isPass ? <ShieldCheck className="w-7 h-7" /> :
+             isNotScanned ? <AlertTriangle className="w-7 h-7" /> :
              <AlertTriangle className="w-7 h-7" />}
           </div>
 
           <div>
             <div className="flex items-center space-x-3">
               <h1 className="text-2xl font-bold font-mono tracking-tight text-white uppercase">
-                {isVeto ? '🔴 BUILD VETOED' : isPass ? '🟢 BUILD PASSED' : '🟡 POLICY WARNING'}
+                {isVeto ? '🔴 BUILD VETOED' : isPass ? '🟢 BUILD PASSED' : isNotScanned ? '⚪ SCAN NOT RUN' : '🟡 POLICY WARNING'}
               </h1>
               <span className={clsx(
                 "px-2.5 py-0.5 rounded text-xs font-mono font-bold uppercase border",
                 isVeto ? "bg-red-500/15 text-red-300 border-red-500/30" :
                 isPass ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" :
+                isNotScanned ? "bg-slate-500/15 text-slate-300 border-slate-500/30" :
                 "bg-amber-500/15 text-amber-300 border-amber-500/30"
               )}>
                 {evaluation.status}
@@ -73,6 +82,8 @@ export default function RunOverview({ data, onSwitchTab }) {
             <p className="text-sm font-medium text-slate-300 mt-1">
               {evaluation.reason || (isVeto 
                 ? 'Critical security violation detected: Agent was influenced by untrusted input to invoke restricted sinks.' 
+                : isUnsupported ? 'An agent may exist, but AgentVeto cannot currently instrument this runtime safely.'
+                : isNotAgentic ? 'No agentic component detected.'
                 : 'No exploitable policy violations detected. Execution safe.')}
             </p>
           </div>

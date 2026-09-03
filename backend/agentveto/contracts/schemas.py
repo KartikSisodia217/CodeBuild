@@ -384,8 +384,12 @@ class AgentCandidate(BaseModel):
 class ProjectManifest(BaseModel):
     project_id: str = Field(default_factory=lambda: f"proj_{uuid.uuid4().hex[:8]}")
     project_name: str = Field(default="Unknown Project")
+    source_type: str = Field(default="zip")
+    repository: Optional[str] = Field(default=None)
+    revision: Optional[str] = Field(default=None)
     language: str = Field(default="python")
     framework: Optional[str] = Field(default=None)
+    agentic: bool = Field(default=False)
     supported: bool = Field(default=False)
     integration_type: Optional[str] = Field(default=None)
     agents: List[AgentCandidate] = Field(default_factory=list)

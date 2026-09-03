@@ -27,5 +27,5 @@
 
 ## Phase 3 Decisions (Project Ingestion)
 - **Static Analysis Over Execution**: To meet strict security constraints, uploaded python code is NEVER imported or executed. AST (Abstract Syntax Tree) parsing is used to detect `@intercept` decorators and extract `ToolCandidate` and `AgentCandidate` information.
-- **Synthetic Execution Boundary**: Since we cannot execute untrusted user code, we extended the `DeterministicFixtureRunner` to accept a `ProjectManifest`. This creates a synthetic trace of the discovered tools and passes them to the real `ThreatModeler` and `AdversarialEngine` to evaluate the vulnerability landscape of the provided tools, explicitly avoiding the execution of arbitrary application code.
+- **Removed Synthetic Execution Boundary**: We previously extended the `DeterministicFixtureRunner` to accept a `ProjectManifest` to run synthetic scans on uploaded projects. This was removed because it produced false-positive PASS results for non-agentic projects like Legal.ai (a RAG app). We now return explicit `UNSUPPORTED` or `NOT_AGENTIC` statuses without faking a scan.
 - **Safe Extraction Limits**: We established constraints (10MB max file size, 50MB max extraction size, max 1000 files, path traversal checks) inside `extractor.py` to prevent archive bombs and malicious file overwrites.

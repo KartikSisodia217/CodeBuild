@@ -150,9 +150,52 @@ def test_delete_user(user_id: int): pass
     
     # Scan
     scan_resp = client.post("/api/scan", json={"project_manifest": manifest})
-    assert scan_resp.status_code == 200
-    data = scan_resp.json()
+    assert scan_resp.status_code == 501
+    assert "Real runtime execution engine is not yet implemented" in scan_resp.json()["detail"]
+
+
+def test_ignored_large_sqlite_and_directories(monkeypatch):
+    import agentveto.ingestion.extractor as extractor
+    monkeypatch.setattr(extractor, "MAX_FILE_SIZE", 80)  # slightly larger to fit agent_code
     
-    assert data["status"] == "completed"
-    assert data["scenario_details"]["metadata"]["execution_mode"] == "project_synthetic"
+    agent_code = """
+from agentveto.core.decorator import intercept
+
+@intercept
+def my_tool(): pass
+"""
+    files = {
+        "agent.py": agent_code,
+        "backend/chroma_db/chroma.sqlite3": "a" * 100,  # exceeds limit, but should be ignored
+        "node_modules/package/index.js": "a" * 100,      # exceeds limit, but should be ignored
+        "__pycache__/agent.cpython-310.pyc": "a" * 100,  # exceeds limit, but should be ignored
+    }
+    zip_bytes = create_zip(files)
+    
+    response = client.post("/api/projects/analyze", files={"file": ("project.zip", zip_bytes, "application/zip")})
+    if response.status_code != 200:
+        print(response.json())
+    assert response.status_code == 200
+    manifest = response.json()
+    
+    assert manifest["supported"] is True
+    assert len(manifest["agents"]) == 1
+    
+    agent = manifest["agents"][0]
+    assert agent["name"] == "agent"
+    assert len(agent["tools"]) == 1
+
+
+def test_oversized_source_file_rejected(monkeypatch):
+    import agentveto.ingestion.extractor as extractor
+    monkeypatch.setattr(extractor, "MAX_FILE_SIZE", 10)
+    
+    files = {
+        "large_source.py": "a" * 15,  # exceeds limit and not ignored
+    }
+    zip_bytes = create_zip(files)
+    
+    response = client.post("/api/projects/analyze", files={"file": ("project.zip", zip_bytes, "application/zip")})
+    assert response.status_code == 400
+    assert "exceeds maximum size" in response.json()["detail"]
 
