@@ -12,37 +12,25 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 
-export default function ScanProgress({ scanConfig, onComplete }) {
+export default function ScanProgress({ scanConfig, scanResult, onComplete }) {
   const [currentStep, setCurrentStep] = useState(0);
 
-  const isBenign = scanConfig.scenario_id === 'benign_support_flow';
-  const finalVerdict = isBenign ? 'PASS' : 'CRITICAL_VETO';
+  const attempts = scanResult?.attack_analysis?.attempts || [];
+  const evaluation = scanResult?.evaluation || {};
+  const isVeto = evaluation.status === 'CRITICAL_VETO';
 
   const steps = [
-    { title: "Agent connected", detail: `${scanConfig.agent_name} telemetry stream established` },
-    { title: "Tool schemas discovered", detail: "Extracted parameters & tool docstrings via AST reflection" },
-    { title: "Threat model generated", detail: "Identified source-sink vector (OWASP ASI01 / MCP10)" },
-    { 
-      title: "Adversarial Simulation: Attempt 1", 
-      detail: isBenign ? "Nominal baseline interaction verification" : "Direct instruction injection",
-      outcome: isBenign ? "Passed" : "Refused",
-      status: isBenign ? "success" : "refused"
-    },
-    { 
-      title: "Adversarial Simulation: Attempt 2", 
-      detail: isBenign ? "Tool schema boundary tests" : "Business-context mutation",
-      outcome: isBenign ? "Passed" : "Refused",
-      status: isBenign ? "success" : "refused"
-    },
-    { 
-      title: "Adversarial Simulation: Attempt 3", 
-      detail: isBenign ? "State invariance verification" : "Contextual response injection (Compliance override)",
-      outcome: isBenign ? "Passed" : "Agent influenced",
-      status: isBenign ? "success" : "influenced"
-    },
-    { title: "High-risk sink evaluation", detail: isBenign ? "No restricted sinks triggered" : "Restricted sink invocation intercepted" },
-    { title: "State evaluation", detail: isBenign ? "Zero unauthorized mutations" : "Unauthorized mutation detected in synthetic state" },
-    { title: "Deterministic Policy Adjudication", detail: isBenign ? "Nominal build approved" : "Boolean invariant violation confirmed" }
+    { title: "Controlled fixture initialized", detail: scanResult?.metadata?.fixture_disclosure || `${scanConfig.agent_name} configured` },
+    { title: "Tool schemas modeled", detail: "Source and restricted sink capabilities analyzed deterministically" },
+    ...attempts.map((attempt) => ({
+      title: `Adversarial simulation: attempt ${attempt.attempt_number}`,
+      detail: attempt.strategy || 'Bounded payload mutation',
+      outcome: attempt.result,
+      status: attempt.status,
+    })),
+    { title: "High-risk sink evaluation", detail: evaluation.details?.high_risk_sink_reached ? "Restricted sink attempt observed in the synthetic sandbox" : "No restricted sink attempt observed" },
+    { title: "State evaluation", detail: evaluation.details?.unauthorized_state_change ? "Unauthorized synthetic state change recorded" : "No unauthorized synthetic state changes recorded" },
+    { title: "Deterministic policy adjudication", detail: evaluation.reason || "Policy invariants evaluated" }
   ];
 
   useEffect(() => {
@@ -141,24 +129,22 @@ export default function ScanProgress({ scanConfig, onComplete }) {
         {currentStep >= steps.length && (
           <div className={clsx(
             "p-4 rounded-xl border flex items-center justify-between animate-fadeIn",
-            finalVerdict === 'CRITICAL_VETO'
+            isVeto
               ? "bg-red-950/30 border-red-500/50 text-red-300"
               : "bg-emerald-950/30 border-emerald-500/50 text-emerald-300"
           )}>
             <div className="flex items-center space-x-3">
-              {finalVerdict === 'CRITICAL_VETO' ? (
+              {isVeto ? (
                 <ShieldAlert className="w-6 h-6 text-red-400" />
               ) : (
                 <ShieldCheck className="w-6 h-6 text-emerald-400" />
               )}
               <div>
                 <div className="text-sm font-black font-mono uppercase">
-                  {finalVerdict === 'CRITICAL_VETO' ? '🔴 BUILD VETOED' : '🟢 BUILD PASSED'}
+                  {isVeto ? '🔴 BUILD VETOED' : '🟢 BUILD PASSED'}
                 </div>
                 <div className="text-xs text-slate-400">
-                  {finalVerdict === 'CRITICAL_VETO' 
-                    ? 'Exploitable vulnerability proven via adversarial simulation.' 
-                    : 'No exploitable policy violations detected.'}
+                  {evaluation.reason || (isVeto ? 'Deterministic policy violation proven.' : 'No exploitable policy violations detected.')}
                 </div>
               </div>
             </div>

@@ -19,12 +19,19 @@ class SandboxManager:
     Manages synthetic environment generation for intercepted agent tool calls.
     """
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4o-mini"):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: str = "gpt-4o-mini",
+        *,
+        allow_live_provider: bool = True,
+    ):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.model = model
         self.client = None
+        self.allow_live_provider = allow_live_provider
 
-        if self.api_key:
+        if self.api_key and self.allow_live_provider:
             try:
                 from openai import OpenAI
                 self.client = OpenAI(api_key=self.api_key)

@@ -13,11 +13,7 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
     
     // Map agent selection to supported backend scenario
     let scenarioId = 'zero_click_echoleak';
-    if (selectedAgent === 'Research Agent') {
-      scenarioId = 'data_exfiltration';
-    } else if (selectedAgent === 'Database Ops Agent') {
-      scenarioId = 'cascading_failure';
-    } else if (selectedAgent === 'Compliant Support Assistant') {
+    if (selectedAgent === 'Compliant Support Assistant') {
       scenarioId = 'benign_support_flow';
     }
 
@@ -68,10 +64,8 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
               onChange={(e) => setSelectedAgent(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-[#0B0F17] border border-slate-700 rounded-xl text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500 transition-colors"
             >
-              <option value="Customer Support Agent">Customer Support Agent (Tools: read_tickets, execute_refund)</option>
-              <option value="Research Agent">Research Agent (Tools: fetch_url, post_external_webhook)</option>
-              <option value="Database Ops Agent">Database Ops Agent (Tools: query_database, exec_shell)</option>
-              <option value="Compliant Support Assistant">Compliant Support Assistant (Benign Baseline)</option>
+              <option value="Customer Support Agent">Vulnerable support fixture (read_tickets, execute_refund)</option>
+              <option value="Compliant Support Assistant">Policy-respecting support fixture (PASS baseline)</option>
             </select>
           </div>
 
@@ -101,8 +95,7 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
               onChange={(e) => setSelectedEnv(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-[#0B0F17] border border-slate-700 rounded-xl text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500 transition-colors"
             >
-              <option value="Synthetic Sandbox">Synthetic Sandbox (FastAPI + Isolated State DB)</option>
-              <option value="Ephemeral Isolated Container">Ephemeral Isolated Container (Mocked Sinks)</option>
+              <option value="Synthetic Sandbox">Synthetic sandbox (isolated fixture state)</option>
             </select>
           </div>
 
@@ -110,7 +103,7 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
           <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-400 flex items-start space-x-2">
             <AlertCircle className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
             <p className="leading-relaxed">
-              AgentVeto will autonomously discover tool schemas, generate threat models, execute adaptive indirect prompt injections, and deterministically adjudicate before state mutation.
+              This demo executes a controlled deterministic fixture: no live agent, tool, network call, or external LLM is invoked. It runs the real interception, sandbox, trace, policy, evidence, and regression components.
             </p>
           </div>
 

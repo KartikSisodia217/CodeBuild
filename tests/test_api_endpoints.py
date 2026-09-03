@@ -44,7 +44,8 @@ def test_api_scenarios_list_and_detail():
     response = client.get("/api/scenarios")
     assert response.status_code == 200
     scenarios = response.json()
-    assert len(scenarios) >= 4
+    assert {"zero_click_echoleak", "benign_support_flow"}.issubset({s["id"] for s in scenarios})
+    assert all(s["execution_mode"] == "deterministic_fixture" for s in scenarios)
     
     # Test details for Zero-Click EchoLeak
     detail_res = client.get("/api/scenarios/zero_click_echoleak")

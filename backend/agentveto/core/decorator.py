@@ -6,9 +6,14 @@ import functools
 import inspect
 import asyncio
 import uuid
-from typing import Callable, Any
+from typing import Callable, Any, Dict, Optional
 
-from agentveto.core.context_vars import run_id_var
+from agentveto.core.context_vars import (
+    attack_payload_var,
+    run_id_var,
+    sandbox_manager_var,
+    state_manager_var,
+)
 from agentveto.contracts.schemas import InterceptedCall
 from agentveto.sandbox.mock_generator import SandboxManager
 from agentveto.telemetry.openinference_logger import TraceManager
@@ -33,6 +38,25 @@ def intercept(func: Callable) -> Callable:
         return async_wrapper
     return sync_wrapper
 
+def _is_payload_target(tool_name: str, payload: Optional[Any]) -> bool:
+    """Return whether a configured payload is intended for this tool response."""
+    if payload is None:
+        return False
+    target = getattr(payload, "target_node", None) or getattr(payload, "target_tool", None)
+    return bool(target and target == tool_name)
+
+
+def _authorization_from_arguments(arguments: Dict[str, Any]) -> bool:
+    """Read explicit authorization evidence only; absence is never treated as approval."""
+    for key in ("is_authorized", "authorized", "approval", "approval_token", "manager_approved"):
+        value = arguments.get(key)
+        if isinstance(value, bool):
+            return value
+        if value not in (None, "", 0, False):
+            return True
+    return False
+
+
 def _handle_intercept(func: Callable, args: tuple, kwargs: dict, is_async: bool) -> Any:
     """Core logic to build InterceptedCall, log telemetry, and fetch mock response."""
     tool_name = func.__name__
@@ -41,7 +65,7 @@ def _handle_intercept(func: Callable, args: tuple, kwargs: dict, is_async: bool)
     sig = inspect.signature(func)
     bound_args = sig.bind(*args, **kwargs)
     bound_args.apply_defaults()
-    arguments = bound_args.arguments
+    arguments = dict(bound_args.arguments)
     
     schema_definition = {
         "name": tool_name,
@@ -63,8 +87,23 @@ def _handle_intercept(func: Callable, args: tuple, kwargs: dict, is_async: bool)
         schema_definition=schema_definition
     )
     
-    # Fetch mock response (SandboxManager is synchronous in our mock_generator.py)
-    mock_response = sandbox_manager.generate_mock_response(intercepted_call)
+    # A controlled execution may provide isolated components through ContextVars.  The default
+    # singleton remains for existing SDK consumers.
+    active_sandbox = sandbox_manager_var.get() or sandbox_manager
+    active_payload = attack_payload_var.get()
+    payload_for_call = active_payload if _is_payload_target(tool_name, active_payload) else None
+
+    # Fetch a mock response.  The wrapped function is intentionally never executed.
+    mock_response = active_sandbox.generate_mock_response(intercepted_call, payload_for_call)
+
+    is_authorized = _authorization_from_arguments(arguments)
+    active_state = state_manager_var.get()
+    if active_state is not None:
+        active_state.record_tool_action(
+            tool_name,
+            arguments,
+            authorized=is_authorized,
+        )
     
     # Log telemetry via Trace Engine
     trace_attributes = {
@@ -72,9 +111,23 @@ def _handle_intercept(func: Callable, args: tuple, kwargs: dict, is_async: bool)
         "tool.arguments": arguments,
         "run_id": current_run_id,
         "status": mock_response.status_code,
+        "is_authorized": is_authorized,
+        "agentveto.intercepted": True,
+        "agentveto.sandboxed": True,
+        "agentveto.payload_injected": bool(payload_for_call),
         "llm.output_messages": [mock_response.response_body]
     }
-    trace_manager.log_span("TOOL", trace_attributes)
+    trace_manager.log_span(
+        "TOOL",
+        trace_attributes,
+        name=tool_name,
+        tool_name=tool_name,
+        tool_parameters=arguments,
+        input_value=arguments,
+        output_value=mock_response.data if mock_response.data is not None else mock_response.response_body,
+        is_tainted=bool(payload_for_call),
+        is_injection_source=bool(payload_for_call),
+    )
     
     # Return mocked response
     if mock_response.data is not None:

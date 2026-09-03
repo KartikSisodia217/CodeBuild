@@ -10,7 +10,7 @@ Frozen after Phase 0 (Hour 4). Changes require team sync.
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 
@@ -43,26 +43,9 @@ class OWASPThreatCategory(str, Enum):
 
 
 
-
-class SpanKind(str, Enum):
-    """OpenInference span kinds for telemetry."""
-    LLM = "LLM"
-    AGENT = "AGENT"
-    TOOL = "TOOL"
-    CHAIN = "CHAIN"
-
-
-class VetoStatus(str, Enum):
-    """Evaluation result status."""
-    PASS = "PASS"
-    WARN = "WARN"
-    CRITICAL_VETO = "CRITICAL_VETO"
-
-
-class ASICategory(str, Enum):
-    """OWASP Agentic Security Initiative categories."""
-    ASI01 = "ASI01"  # Goal Hijack
-    MCP10 = "MCP10"  # Data Exfiltration
+# Legacy aliases — kept for backward compatibility with imported test fixtures.
+VetoStatus = EvaluationStatus
+ASICategory = OWASPThreatCategory
 
 
 class ToolCapability(str, Enum):
@@ -205,7 +188,7 @@ class StateDiff(BaseModel):
     unauthorized_changes: List[str] = Field(default_factory=list)
     has_changes: bool = Field(default=False, description="Whether any changes occurred")
     state_mutated: bool = False
-    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def __init__(self, **data):
         if "has_changes" in data and "state_mutated" not in data:
@@ -254,7 +237,7 @@ class TrajectoryData(BaseModel):
     user_prompt: str = ""
     spans: List[OpenInferenceSpan] = Field(default_factory=list, description="All spans in this trajectory")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Run metadata")
-    created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     
     # Legacy single-span fields (backward compatibility with Member 2's storage)
     span_kind: Optional[str] = Field(default="", description="Legacy: span kind string")
@@ -286,7 +269,7 @@ class EvaluationResult(BaseModel):
     threat_category: Optional[Union[OWASPThreatCategory, str]] = None
     state_diff: Optional[StateDiff] = None
     latency_ms: float = 0.0
-    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     details: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -367,7 +350,7 @@ class RegressionTestSpec(BaseModel):
     name: str
     target_agent: str
     threat_category: str
-    created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     setup: Dict[str, Any] = Field(default_factory=dict)
     attack_vector: AttackVectorSpec
     expected_adjudication: ExpectedAdjudicationSpec
