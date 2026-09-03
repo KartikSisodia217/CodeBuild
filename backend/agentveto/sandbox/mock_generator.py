@@ -138,7 +138,7 @@ class SandboxManager:
             else:
                 data["details"] = f"Mock response for {tool_name}"
 
-        json_str = json.dumps(data, indent=2)
+        json_str = json.dumps(data, indent=2, ensure_ascii=False)
 
         return MockResponse(
             status_code=200,
