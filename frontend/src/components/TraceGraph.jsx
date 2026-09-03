@@ -215,7 +215,11 @@ export default function TraceGraph({ dag, evaluation, onNodeClick }) {
           color: strokeColor,
           width: 22,
           height: 22
-        }
+        },
+        label: e.label,
+        labelStyle: { fill: '#cbd5e1', fontWeight: 600, fontSize: 10, fontFamily: 'monospace' },
+        labelBgStyle: { fill: '#0f172a', opacity: 0.9, rx: 4, ry: 4 },
+        labelBgPadding: [6, 4]
       };
     });
 

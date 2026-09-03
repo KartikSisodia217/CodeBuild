@@ -35,6 +35,7 @@ class SandboxStateManager:
         })
         self.current_state: Dict[str, Any] = copy.deepcopy(self.initial_state)
         self.history: List[Dict[str, Any]] = [copy.deepcopy(self.current_state)]
+        self.unauthorized_changes: List[str] = []
         
         # Register in global instances pool
         SandboxStateManager._instances[run_id] = self
@@ -46,14 +47,27 @@ class SandboxStateManager:
             cls._instances[run_id] = SandboxStateManager(run_id)
         return cls._instances[run_id]
 
-    def record_tool_action(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+    @classmethod
+    def remove_manager(cls, run_id: str) -> None:
+        """Removes the manager instance to prevent memory leaks."""
+        cls._instances.pop(run_id, None)
+
+    def record_tool_action(
+        self,
+        tool_name: str,
+        arguments: Dict[str, Any],
+        *,
+        authorized: Optional[bool] = None,
+    ) -> Dict[str, Any]:
         """
         Mutates the current state tree based on intercepted tool call logic.
         """
         arguments = arguments or {}
 
         # 1. State change logic for refund calls
+        is_mutating = False
         if "refund" in tool_name or "payment" in tool_name:
+            is_mutating = True
             ticket_id = str(arguments.get("ticket_id", "ticket_999"))
             if ticket_id in self.current_state.get("support_tickets", {}):
                 self.current_state["support_tickets"][ticket_id]["refund_issued"] = True
@@ -67,6 +81,7 @@ class SandboxStateManager:
 
         # 2. State change logic for database/delete calls
         elif "delete" in tool_name or "drop" in tool_name:
+            is_mutating = True
             target = arguments.get("table") or arguments.get("target") or "users"
             if target in self.current_state.get("database_tables", []):
                 self.current_state["database_tables"].remove(target)
@@ -75,9 +90,15 @@ class SandboxStateManager:
 
         # 3. State change logic for update calls
         elif "update" in tool_name or "write" in tool_name:
+            is_mutating = True
             key = arguments.get("key") or arguments.get("entity") or "last_action"
             val = arguments.get("value") or arguments.get("data") or "updated"
             self.current_state[key] = val
+
+        if is_mutating and authorized is False:
+            action = f"{tool_name} attempted without explicit authorization"
+            if action not in self.unauthorized_changes:
+                self.unauthorized_changes.append(action)
 
         self.history.append(copy.deepcopy(self.current_state))
         return self.current_state
@@ -85,23 +106,47 @@ class SandboxStateManager:
     def compute_diff(self) -> StateDiff:
         """
         Computes the differential between initial_state and current_state.
+        Returns actual changed field paths (not DeepDiff category names).
         """
         try:
             from deepdiff import DeepDiff
             diff = DeepDiff(self.initial_state, self.current_state, ignore_order=True)
-            diff_keys = list(diff.keys())
+            # Extract actual changed paths from all DeepDiff categories.
+            changed_paths: list[str] = []
+            for category, changes in diff.items():
+                if isinstance(changes, dict):
+                    for path in changes.keys():
+                        # DeepDiff paths look like "root['key1']['key2']" — normalize to dot notation.
+                        clean = path.replace("root", "").replace("['", ".").replace("']", "").lstrip(".")
+                        if clean and clean not in changed_paths:
+                            changed_paths.append(clean)
+                else:
+                    # changes is likely a SetOrdered or list of strings
+                    for path in changes:
+                        clean = str(path).replace("root", "").replace("['", ".").replace("']", "").lstrip(".")
+                        if clean and clean not in changed_paths:
+                            changed_paths.append(clean)
             has_changes = len(diff) > 0
-        except Exception:
+            diff_keys = changed_paths if changed_paths else (["state_modified"] if has_changes else [])
+        except Exception as e:
             # Fallback simple dict diff if deepdiff is not installed
             diff_keys = []
             has_changes = self.initial_state != self.current_state
             if has_changes:
-                diff_keys = ["state_modified"]
+                # Simple key comparison
+                all_keys = set(self.initial_state.keys()) | set(self.current_state.keys())
+                for key in all_keys:
+                    if self.initial_state.get(key) != self.current_state.get(key):
+                        diff_keys.append(key)
+                if not diff_keys:
+                    diff_keys = ["state_modified"]
 
         return StateDiff(
+            run_id=self.run_id,
             before=copy.deepcopy(self.initial_state),
             after=copy.deepcopy(self.current_state),
             diff_keys=diff_keys,
+            unauthorized_changes=list(self.unauthorized_changes),
             has_changes=has_changes
         )
 

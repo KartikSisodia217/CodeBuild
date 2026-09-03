@@ -25,8 +25,8 @@ export default function RunOverview({ data, onSwitchTab }) {
   const isVeto = evaluation.status === 'CRITICAL_VETO';
   const isPass = evaluation.status === 'PASS';
 
-  const injectionSource = evaluation.injection_source_span_id || data.attack_analysis?.injection_point || 'read_tickets()';
-  const highRiskSink = evaluation.violating_tool || data.attack_analysis?.high_risk_sink || 'execute_refund()';
+  const injectionSource = evaluation.injection_source_span_id || data.attack_analysis?.injection_point || 'None observed';
+  const highRiskSink = evaluation.violating_tool || (evaluation.details?.high_risk_sink_reached ? data.attack_analysis?.high_risk_sink : 'None reached');
 
   return (
     <div className="space-y-6">
@@ -98,6 +98,13 @@ export default function RunOverview({ data, onSwitchTab }) {
         </div>
       </div>
 
+      {meta.execution_mode === 'deterministic_fixture' && (
+        <div className="rounded-xl border border-indigo-500/25 bg-indigo-950/20 px-4 py-3 text-xs text-indigo-100">
+          <span className="mr-2 font-mono font-bold uppercase text-indigo-300">Controlled fixture</span>
+          {meta.fixture_disclosure || 'Evidence was generated in an isolated deterministic sandbox.'}
+        </div>
+      )}
+
       {/* Primary Execution Metadata Cards */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
         <div className="p-4 rounded-xl bg-[#0E131F] border border-[#1F293D]">
@@ -112,17 +119,17 @@ export default function RunOverview({ data, onSwitchTab }) {
 
         <div className="p-4 rounded-xl bg-[#0E131F] border border-[#1F293D]">
           <div className="text-[10px] font-mono text-slate-400 uppercase font-bold tracking-wider">Duration</div>
-          <div className="text-sm font-bold text-white font-mono mt-1">{meta.duration || '4.82s'}</div>
+          <div className="text-sm font-bold text-white font-mono mt-1">{meta.duration || '—'}</div>
         </div>
 
         <div className="p-4 rounded-xl bg-[#0E131F] border border-[#1F293D]">
           <div className="text-[10px] font-mono text-slate-400 uppercase font-bold tracking-wider">Attack Attempts</div>
-          <div className="text-sm font-bold text-amber-400 font-mono mt-1">{meta.attack_attempts ?? (data.attack_analysis?.attempts?.length || 3)}</div>
+          <div className="text-sm font-bold text-amber-400 font-mono mt-1">{meta.attack_attempts ?? data.attack_analysis?.attempts?.length ?? '—'}</div>
         </div>
 
         <div className="p-4 rounded-xl bg-[#0E131F] border border-[#1F293D]">
           <div className="text-[10px] font-mono text-slate-400 uppercase font-bold tracking-wider">Tool Calls</div>
-          <div className="text-sm font-bold text-white font-mono mt-1">{data.trace?.spans?.length || meta.tool_calls || 5}</div>
+          <div className="text-sm font-bold text-white font-mono mt-1">{data.trace?.spans?.length ?? meta.tool_calls ?? '—'}</div>
         </div>
 
         <div className="p-4 rounded-xl bg-[#0E131F] border border-[#1F293D]">
@@ -161,7 +168,7 @@ export default function RunOverview({ data, onSwitchTab }) {
             <div>
               <div className="text-[10px] text-slate-500 font-mono uppercase tracking-wider font-semibold">Policy Rule Triggered</div>
               <div className="text-xs font-mono text-red-400 bg-red-950/20 p-2.5 rounded-lg border border-red-500/20 mt-1">
-                {evaluation.rule_name || 'RESTRICTED_SINK_RULE (execute_refund)'}
+                {evaluation.rule_name || 'No policy rule triggered'}
               </div>
             </div>
           </div>
@@ -194,8 +201,11 @@ export default function RunOverview({ data, onSwitchTab }) {
                 <div className="text-[10px] font-mono text-red-400 uppercase font-semibold">High-Risk Sink</div>
                 <div className="text-xs font-mono font-bold text-white mt-0.5">{highRiskSink}</div>
               </div>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-red-500/10 text-red-400 border border-red-500/20">
-                BLOCKED BY VETO
+              <span className={clsx(
+                "px-2 py-0.5 rounded text-[10px] font-mono font-semibold border",
+                isVeto ? "bg-red-500/10 text-red-400 border-red-500/20" : "bg-slate-800 text-slate-300 border-slate-700"
+              )}>
+                {isVeto ? 'BLOCKED BY VETO' : 'NOT REACHED'}
               </span>
             </div>
           </div>

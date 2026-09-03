@@ -112,17 +112,29 @@ class YamlRegressionSerializer:
     ) -> bool:
         """
         Validates whether a rerun successfully matched expected policy assertions.
+        Checks verdict, violation rule, and state invariants.
         """
         verdict_val = actual_eval.status.value if hasattr(actual_eval.status, 'value') else str(actual_eval.status)
         expected_val = spec.expected_adjudication.verdict.value if hasattr(spec.expected_adjudication.verdict, 'value') else str(spec.expected_adjudication.verdict)
         verdict_matches = verdict_val == expected_val
+
+        # Rule verification: if spec expects a specific rule, the actual rule must match.
+        # Do NOT bypass on CRITICAL_VETO status — that masks mismatched rules.
         rule_matches = (
             not spec.expected_adjudication.violation_rule
             or actual_eval.rule_name == spec.expected_adjudication.violation_rule
-            or actual_eval.status == EvaluationStatus.CRITICAL_VETO
-            or str(actual_eval.status) == "CRITICAL_VETO"
         )
-        return verdict_matches and rule_matches
+
+        # State invariant verification: if spec declares state invariants, check them.
+        state_ok = True
+        if spec.expected_adjudication.state_invariant and actual_state is not None:
+            for key, expected_value in spec.expected_adjudication.state_invariant.items():
+                actual_value = actual_state.after.get(key)
+                if actual_value != expected_value:
+                    state_ok = False
+                    break
+
+        return verdict_matches and rule_matches and state_ok
 
 
 _yaml_serializer = YamlRegressionSerializer()

@@ -40,17 +40,18 @@ export default function App() {
   const [scenarioData, setScenarioData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
+  const [scanError, setScanError] = useState(null);
 
   // New Scan Modal state
   const [isNewScanOpen, setIsNewScanOpen] = useState(false);
   const [currentScanConfig, setCurrentScanConfig] = useState(null);
 
   const [metrics, setMetrics] = useState({
-    total_evaluations: 18,
-    veto_count: 12,
-    pass_count: 5,
-    warn_count: 1,
-    average_latency_ms: 0.85
+    total_evaluations: 0,
+    veto_count: 0,
+    pass_count: 0,
+    warn_count: 0,
+    average_latency_ms: 0.0
   });
 
   useEffect(() => {
@@ -106,13 +107,28 @@ export default function App() {
     setActiveTab('overview');
   };
 
-  const handleStartScan = (config) => {
+  const handleStartScan = async (config) => {
     setIsNewScanOpen(false);
     setCurrentScanConfig(config);
-    setCurrentView('progress');
+    setScanError(null);
+    setLoading(true);
+    try {
+      const res = await axios.post('http://127.0.0.1:8000/api/scan', config);
+      setCurrentScanConfig({ ...config, scanResult: res.data.scenario_details });
+      setCurrentView('progress');
+      await fetchMetrics();
+    } catch (err) {
+      setScanError(err.response?.data?.detail || 'The controlled scan could not be completed.');
+      setCurrentView('dashboard');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCompleteScan = () => {
+    if (currentScanConfig?.scanResult) {
+      setScenarioData(currentScanConfig.scanResult);
+    }
     if (currentScanConfig?.scenario_id) {
       setSelectedScenarioId(currentScanConfig.scenario_id);
     }
@@ -152,6 +168,12 @@ export default function App() {
         />
       )}
 
+      {scanError && currentView === 'dashboard' && (
+        <div className="fixed bottom-5 right-5 max-w-sm rounded-xl border border-red-500/40 bg-red-950/90 p-4 text-xs text-red-200 shadow-xl">
+          {scanError}
+        </div>
+      )}
+
       {/* VIEW 2: RUN HISTORY (SCREEN 11) */}
       {currentView === 'history' && (
         <RunHistory
@@ -164,6 +186,7 @@ export default function App() {
       {currentView === 'progress' && currentScanConfig && (
         <ScanProgress
           scanConfig={currentScanConfig}
+          scanResult={currentScanConfig.scanResult}
           onComplete={handleCompleteScan}
         />
       )}
