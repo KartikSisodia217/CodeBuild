@@ -15,6 +15,7 @@ from agentveto.contracts.schemas import (
     EvidenceDAG,
     PolicyRule,
     EvaluationStatus,
+    ProjectManifest,
 )
 from agentveto.evaluator.policy_engine import evaluate_trace
 from agentveto.evaluator.rules import DEFAULT_POLICY_RULES
@@ -68,6 +69,7 @@ class StartScanRequest(BaseModel):
     attack_profile: str = "Adaptive Adversarial Testing (ASI01)"
     environment: str = "Synthetic Sandbox"
     scenario_id: Optional[str] = "zero_click_echoleak"
+    project_manifest: Optional[ProjectManifest] = None
 
 
 
@@ -159,23 +161,29 @@ def list_scenarios():
 
 @app.post("/api/scan")
 def start_scan_endpoint(req: StartScanRequest):
-    scenario_id = req.scenario_id or "zero_click_echoleak"
-    try:
-        details = run_fixture_scenario(scenario_id)
-    except KeyError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Unknown controlled fixture scenario '{scenario_id}'.",
-        )
+    if req.project_manifest:
+        from agentveto.runtime import _fixture_runner
+        details = _fixture_runner.run_project(req.project_manifest)
+    else:
+        scenario_id = req.scenario_id or "zero_click_echoleak"
+        try:
+            details = run_fixture_scenario(scenario_id)
+        except KeyError:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Unknown controlled fixture scenario '{scenario_id}'.",
+            )
+            
     _record_evaluation(details["evaluation"])
     return {
         "status": "completed",
         "scan_id": details["trace"].run_id,
-        "agent_name": req.agent_name,
+        "agent_name": req.project_manifest.project_name if req.project_manifest else req.agent_name,
         "attack_profile": req.attack_profile,
         "environment": req.environment,
         "scenario_details": details
     }
+
 
 
 @app.get("/api/scenarios/{scenario_id}")
@@ -187,6 +195,38 @@ def get_scenario_details(scenario_id: str):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Unknown controlled fixture scenario '{scenario_id}'.",
         )
+
+
+import tempfile
+import shutil
+from fastapi import File, UploadFile
+from agentveto.contracts.schemas import ProjectManifest
+from agentveto.ingestion.extractor import safe_extract, ExtractionError
+from agentveto.ingestion.discovery import discover_project
+
+@app.post("/api/projects/analyze", response_model=ProjectManifest)
+async def analyze_project(file: UploadFile = File(...)):
+    if not file.filename.endswith('.zip'):
+        raise HTTPException(status_code=400, detail="Only ZIP files are supported.")
+        
+    temp_dir = tempfile.mkdtemp()
+    zip_path = f"{temp_dir}/uploaded.zip"
+    
+    try:
+        with open(zip_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        extract_dir = f"{temp_dir}/extracted"
+        try:
+            safe_extract(zip_path, extract_dir)
+        except ExtractionError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+            
+        manifest = discover_project(extract_dir, project_name=file.filename)
+        return manifest
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
 
 
 if __name__ == "__main__":

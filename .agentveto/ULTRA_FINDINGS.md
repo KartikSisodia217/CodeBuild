@@ -64,3 +64,8 @@
 - **Impact:** The Vite build cannot be run until dependencies are provisioned.
 - **Proposed fix:** Use the bundled package manager without modifying source lockfiles, then run the build.
 - **Status:** In progress.
+
+## Phase 3 Findings (Project Ingestion)
+- **FastAPI File Uploads**: Added `python-multipart` to handle FastAPI `UploadFile` requests gracefully.
+- **AST Parsing**: Discovered that analyzing Python code purely via `ast.parse` is highly effective and completely sidesteps the security risks associated with dynamically loading arbitrary modules via `importlib`.
+- **Pipeline Reusability**: The existing AgentVeto pipeline (`ThreatModeler`, `AttackGraph`, `evaluate_trace`) was robust enough to handle dynamically generated `ToolSchemas` derived from AST without needing any modifications to the core engine.

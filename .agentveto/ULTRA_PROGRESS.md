@@ -2,59 +2,44 @@
 
 ## Current Phase
 
-Phase 2 - Post-V1 Hardening Execution (Cleanup, Evaluator, State Diff, Frontend Data Fidelity).
+Phase 3 - User Project Ingestion & Synthetic Scan (Backend).
 
 ## Current Task
 
-Completed execution of the Post-V1 Implementation Plan. Addressed dead code, evaluator bugs, evidence DAG enhancements, state diff fixes, security bugs, and improved test coverage.
+Implemented secure user project upload, extraction, and AST-based static discovery. Created integration with the AgentVeto deterministic synthetic scanner.
 
 ## Completed Work
 
-- Removed dead static scenario data and unused imports from `main.py`
-- Deduplicated enums in `contracts/schemas.py` and fixed deprecated `datetime.utcnow()`
-- Consolidated duplicate `TraceManager` logic in `openinference_logger.py`
-- Fixed `yaml_serializer.py` regression bypass bug
-- Fixed `policy_engine.py` to track the FIRST injection source (causal attribution)
-- Enhanced `evidence_graph.py` to use `parent_id` for tree construction and added causal edge labels
-- Fixed `state_manager.py` to extract actual mutated field paths from DeepDiff
-- Replaced fake initial metrics in frontend `App.jsx` with dynamic API data
-- Improved state diff key comparison in `EvidenceView.jsx`
-- Fixed CORS wildcard with credentials vulnerability in `main.py`
-- Fixed invalid Anthropic model identifier in `attacker_graph.py`
-- Fixed memory leak in `SandboxStateManager` by implementing `remove_manager()` cleanup
-- Added comprehensive regression and validation tests in `test_hardening.py`
+- Implemented safe ZIP extraction with path traversal and size protections.
+- Built AST-based static analysis to discover `python_interceptor` usage without executing code.
+- Added `/api/projects/analyze` to ingest projects and generate `ProjectManifest`.
+- Extended `/api/scan` and `DeterministicFixtureRunner` to run mock scenarios dynamically populated with discovered tools.
+- Wrote extensive tests for security and functionality in `tests/test_project_ingestion.py`.
+- Ensured 100% backward compatibility with existing demo fixtures.
 
 ## Work In Progress
 
-Awaiting user approval to proceed with Adversarial Engine hardening (or Frontend/Node.js dependencies). 
+Frontend implementation for uploading projects (reserved for the next agent/phase).
 
 ## Files Modified
 
 - `backend/main.py`
 - `backend/agentveto/contracts/schemas.py`
-- `backend/agentveto/telemetry/openinference_logger.py`
-- `backend/agentveto/registry/yaml_serializer.py`
-- `backend/agentveto/evaluator/policy_engine.py`
-- `backend/agentveto/registry/evidence_graph.py`
-- `backend/agentveto/sandbox/state_manager.py`
-- `backend/agentveto/adversarial/attacker_graph.py`
 - `backend/agentveto/runtime.py`
-- `frontend/src/App.jsx`
-- `frontend/src/components/EvidenceView.jsx`
-- `tests/test_hardening.py`
-- `.agentveto/ULTRA_PROGRESS.md`
-- `.agentveto/ULTRA_PLAN.md`
-- `.agentveto/ULTRA_FINDINGS.md`
-- `.agentveto/ULTRA_TEST_LOG.md`
-- `.agentveto/ULTRA_DECISIONS.md`
+- `backend/agentveto/ingestion/__init__.py`
+- `backend/agentveto/ingestion/extractor.py`
+- `backend/agentveto/ingestion/discovery.py`
+- `tests/test_project_ingestion.py`
+- `requirements.txt`
+- `.agentveto/*`
 
 ## Tests Run
 
-- `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=backend python3 -m pytest -q -p no:cacheprovider`
+- `PYTHONPATH=backend python3 -m pytest tests/`
 
 ## Tests Passed
 
-- 53 backend tests.
+- 61 backend tests passed (including 8 new tests for ingestion).
 
 ## Tests Failed
 
@@ -63,20 +48,14 @@ Awaiting user approval to proceed with Adversarial Engine hardening (or Frontend
 ## Known Bugs
 
 - None known in the current bounded execution flow.
-- A Node.js installation decision is pending to build the frontend.
-
-## Known Regressions
-
-- None.
 
 ## Architectural Discoveries
 
-- The React Flow DAG component needed true `parent_id` linkages rather than sequential ones to represent proper execution traces.
-- DeepDiff `dictionary_item_added` required custom path extraction to generate user-friendly state-mutation keys.
+- We can leverage `DeterministicFixtureRunner` to run a synthetic trace with dynamically discovered tool definitions. This allows us to use the real AgentVeto security engine without ever importing or executing untrusted user code.
 
 ## Blockers
 
-- Node.js is not present on the system. Need user input on whether to `brew install node` to compile the frontend Vite project.
+- None for the backend. Node.js is required for the upcoming frontend work.
 
 ## FINAL STATUS
 
@@ -87,14 +66,14 @@ In Progress.
 - Phase 0 baseline audit and persistent checkpoint setup.
 - Phase 1 vertical-flow hardening (fixture integration).
 - Phase 1.5 Code cleanup, evaluation fidelity fixes, state diff hardening, evidence DAG structural improvements, and test coverage.
+- Phase 3 Backend Project Ingestion & Synthetic Scanning.
 
 ## IN PROGRESS
 
-- Adversarial Engine Hardening (Planning)
+- Frontend UI integration for Project Ingestion (Planning).
 
 ## REMAINING
 
-- Adversarial Engine Hardening
 - Sandbox Hardening
 - Frontend Production Polish
 - Demo Engineering
@@ -102,10 +81,4 @@ In Progress.
 
 ## FINAL TEST STATUS
 
-- Backend: 53 tests passed.
-- Frontend: Blocked by Node.js absence.
-
-## NEXT AGENT INSTRUCTION
-
-1. Await user feedback on Node.js installation.
-2. Proceed to Adversarial Engine hardening and Sandbox realistic mock generation.
+- Backend: 61 tests passed.

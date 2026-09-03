@@ -24,3 +24,8 @@
   the demo flaky and prevents repeatable CI testing.
 - **Consequences:** The product must describe fixtures as controlled simulations, not as live
   evaluation of an arbitrary external agent.
+
+## Phase 3 Decisions (Project Ingestion)
+- **Static Analysis Over Execution**: To meet strict security constraints, uploaded python code is NEVER imported or executed. AST (Abstract Syntax Tree) parsing is used to detect `@intercept` decorators and extract `ToolCandidate` and `AgentCandidate` information.
+- **Synthetic Execution Boundary**: Since we cannot execute untrusted user code, we extended the `DeterministicFixtureRunner` to accept a `ProjectManifest`. This creates a synthetic trace of the discovered tools and passes them to the real `ThreatModeler` and `AdversarialEngine` to evaluate the vulnerability landscape of the provided tools, explicitly avoiding the execution of arbitrary application code.
+- **Safe Extraction Limits**: We established constraints (10MB max file size, 50MB max extraction size, max 1000 files, path traversal checks) inside `extractor.py` to prevent archive bombs and malicious file overwrites.

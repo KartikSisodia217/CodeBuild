@@ -30,3 +30,21 @@ Command: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=backend python3 -m pytest -q -p n
 - [x] Injection source correctly attributes to first observed tainted span (`policy_engine.py`)
 - [x] Memory leak in sandbox state manager resolved.
 - [x] Node.js remains missing (Frontend build blocked).
+
+## Phase 3: Project Ingestion
+
+### Execution
+```bash
+PYTHONPATH=backend python3 -m pytest tests/test_project_ingestion.py
+```
+
+### Coverage Added
+- `test_valid_project_zip_with_interceptor`: Validates AST extraction without execution.
+- `test_unsupported_project`: Validates rejection of non-AgentVeto files.
+- `test_malicious_archive_traversal`: Protects against `../../` attacks.
+- `test_absolute_path_archive`: Protects against absolute paths.
+- `test_oversized_file`: Validates ZIP bomb protections.
+- `test_uploaded_project_scan`: Validates synthetic `StartScanRequest` correctly evaluates the extracted manifest.
+
+### Results
+- Passed: 61/61 backend tests. All legacy demos and endpoints continue to operate perfectly.

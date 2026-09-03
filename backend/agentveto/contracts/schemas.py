@@ -365,3 +365,30 @@ class RunMetadata(BaseModel):
     started_at: str
     completed_at: Optional[str] = None
     status: str
+
+# ─── Project Ingestion Contracts ──────────────────────────────────────────────
+
+class ToolCandidate(BaseModel):
+    name: str = Field(..., description="Name of the discovered tool")
+    source_file: str = Field(..., description="File where the tool is defined")
+    schema_hint: Optional[Dict[str, Any]] = Field(default=None, description="Statically inferred schema if available")
+    line_number: Optional[int] = Field(default=None, description="Line number of tool definition")
+
+class AgentCandidate(BaseModel):
+    name: str = Field(..., description="Name of the agent or primary file")
+    file: str = Field(..., description="File path")
+    entry_point: Optional[str] = Field(default=None, description="Inferred entry point")
+    integration: str = Field(..., description="Type of integration detected (e.g., 'python_interceptor')")
+    tools: List[ToolCandidate] = Field(default_factory=list, description="Tools associated with this agent")
+
+class ProjectManifest(BaseModel):
+    project_id: str = Field(default_factory=lambda: f"proj_{uuid.uuid4().hex[:8]}")
+    project_name: str = Field(default="Unknown Project")
+    language: str = Field(default="python")
+    framework: Optional[str] = Field(default=None)
+    supported: bool = Field(default=False)
+    integration_type: Optional[str] = Field(default=None)
+    agents: List[AgentCandidate] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
+    errors: List[str] = Field(default_factory=list)
+
