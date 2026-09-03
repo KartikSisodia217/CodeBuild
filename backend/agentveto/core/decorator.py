@@ -61,19 +61,11 @@ def _handle_intercept(func: Callable, args: tuple, kwargs: dict, is_async: bool)
     """Core logic to build InterceptedCall, log telemetry, and fetch mock response."""
     tool_name = func.__name__
     
-    # Heuristic for LangChain BaseTool or other class-based tools
-    if args and hasattr(args[0], 'name') and isinstance(args[0].name, str):
-        tool_name = args[0].name
-    
     # Extract signature/schema
     sig = inspect.signature(func)
     bound_args = sig.bind(*args, **kwargs)
     bound_args.apply_defaults()
     arguments = dict(bound_args.arguments)
-    
-    # Remove 'self' from arguments so it doesn't pollute the trace or payload
-    if 'self' in arguments:
-        del arguments['self']
     
     schema_definition = {
         "name": tool_name,
