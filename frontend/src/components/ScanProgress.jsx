@@ -15,9 +15,9 @@ import clsx from 'clsx';
 export default function ScanProgress({ scanConfig, scanResult, onComplete }) {
   const [currentStep, setCurrentStep] = useState(0);
 
-  const attempts = scanResult?.attack_analysis?.attempts || [];
+  const attempts = scanResult?.threat_model?.attempts || [];
   const evaluation = scanResult?.evaluation || {};
-  const isVeto = evaluation.status === 'CRITICAL_VETO';
+  const isVeto = scanResult?.verdict === 'VETO';
 
   const steps = [
     { title: "Controlled fixture initialized", detail: scanResult?.metadata?.fixture_disclosure || `${scanConfig.agent_name} configured` },

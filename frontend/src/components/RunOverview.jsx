@@ -22,15 +22,18 @@ export default function RunOverview({ data, onSwitchTab }) {
 
   const evaluation = data.evaluation || {};
   const meta = data.metadata || {};
-  const isVeto = evaluation.status === 'CRITICAL_VETO';
-  const isPass = evaluation.status === 'PASS';
+  const isVeto = data.verdict === 'VETO';
+  const isPass = data.verdict === 'PASS';
 
-  const injectionSource = evaluation.injection_source_span_id || data.attack_analysis?.injection_point || 'None observed';
-  const highRiskSink = evaluation.violating_tool || (evaluation.details?.high_risk_sink_reached ? data.attack_analysis?.high_risk_sink : 'None reached');
+  const injectionSource = evaluation.injection_source_span_id || data.threat_model?.injection_point || 'None observed';
+  const highRiskSink = evaluation.violating_tool || (evaluation.details?.high_risk_sink_reached ? data.threat_model?.high_risk_sink : 'None reached');
 
-  const isUnsupported = evaluation.status === 'UNSUPPORTED';
-  const isNotAgentic = evaluation.status === 'NOT_AGENTIC';
-  const isNotScanned = isUnsupported || isNotAgentic;
+  const isUnsupported = data.status === 'UNSUPPORTED';
+  const isNotAgentic = data.status === 'NOT_AGENTIC';
+  const isExecutionUnavailable = data.status === 'EXECUTION_UNAVAILABLE';
+  const isExecutionFailed = data.status === 'EXECUTION_FAILED';
+  const isUnsupportedEntrypoint = data.status === 'UNSUPPORTED_ENTRYPOINT';
+  const isNotScanned = isUnsupported || isNotAgentic || isExecutionUnavailable || isExecutionFailed || isUnsupportedEntrypoint;
 
   return (
     <div className="space-y-6">
@@ -66,7 +69,7 @@ export default function RunOverview({ data, onSwitchTab }) {
           <div>
             <div className="flex items-center space-x-3">
               <h1 className="text-2xl font-bold font-mono tracking-tight text-white uppercase">
-                {isVeto ? '🔴 BUILD VETOED' : isPass ? '🟢 BUILD PASSED' : isNotScanned ? '⚪ SCAN NOT RUN' : '🟡 POLICY WARNING'}
+                {isVeto ? '🔴 BUILD VETOED' : isPass ? '🟢 BUILD PASSED' : (isExecutionFailed || isExecutionUnavailable) ? '🔴 EXECUTION FAILED' : isNotScanned ? '⚪ SCAN NOT RUN' : '🟡 POLICY WARNING'}
               </h1>
               <span className={clsx(
                 "px-2.5 py-0.5 rounded text-xs font-mono font-bold uppercase border",
@@ -75,7 +78,7 @@ export default function RunOverview({ data, onSwitchTab }) {
                 isNotScanned ? "bg-slate-500/15 text-slate-300 border-slate-500/30" :
                 "bg-amber-500/15 text-amber-300 border-amber-500/30"
               )}>
-                {evaluation.status}
+                {data.verdict || data.status}
               </span>
             </div>
             
@@ -120,12 +123,12 @@ export default function RunOverview({ data, onSwitchTab }) {
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
         <div className="p-4 rounded-xl bg-[#0E131F] border border-[#1F293D]">
           <div className="text-[10px] font-mono text-slate-400 uppercase font-bold tracking-wider">Target Agent</div>
-          <div className="text-sm font-bold text-white truncate mt-1">{meta.agent_name || data.trace?.agent_name}</div>
+          <div className="text-sm font-bold text-white truncate mt-1">{meta.agent_name || data.trajectory?.agent_name}</div>
         </div>
 
         <div className="p-4 rounded-xl bg-[#0E131F] border border-[#1F293D]">
           <div className="text-[10px] font-mono text-slate-400 uppercase font-bold tracking-wider">Run ID</div>
-          <div className="text-sm font-bold text-indigo-400 font-mono truncate mt-1">{meta.run_number || data.scenario_id}</div>
+          <div className="text-sm font-bold text-indigo-400 font-mono truncate mt-1">{meta.run_number || data.run_id}</div>
         </div>
 
         <div className="p-4 rounded-xl bg-[#0E131F] border border-[#1F293D]">
@@ -135,12 +138,12 @@ export default function RunOverview({ data, onSwitchTab }) {
 
         <div className="p-4 rounded-xl bg-[#0E131F] border border-[#1F293D]">
           <div className="text-[10px] font-mono text-slate-400 uppercase font-bold tracking-wider">Attack Attempts</div>
-          <div className="text-sm font-bold text-amber-400 font-mono mt-1">{meta.attack_attempts ?? data.attack_analysis?.attempts?.length ?? '—'}</div>
+          <div className="text-sm font-bold text-amber-400 font-mono mt-1">{meta.attack_attempts ?? data.threat_model?.attempts?.length ?? '—'}</div>
         </div>
 
         <div className="p-4 rounded-xl bg-[#0E131F] border border-[#1F293D]">
           <div className="text-[10px] font-mono text-slate-400 uppercase font-bold tracking-wider">Tool Calls</div>
-          <div className="text-sm font-bold text-white font-mono mt-1">{data.trace?.spans?.length ?? meta.tool_calls ?? '—'}</div>
+          <div className="text-sm font-bold text-white font-mono mt-1">{data.trajectory?.spans?.length ?? meta.tool_calls ?? '—'}</div>
         </div>
 
         <div className="p-4 rounded-xl bg-[#0E131F] border border-[#1F293D]">

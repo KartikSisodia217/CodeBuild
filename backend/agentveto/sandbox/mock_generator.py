@@ -45,7 +45,7 @@ class SandboxManager:
         Generates a synthetic JSON response for an intercepted tool call.
         If an AttackPayload is provided, embeds the payload into a text field of the response.
         """
-        schema_info = call.schema_definition or {}
+        schema_info = call.tool_schema or {}
         tool_name = call.tool_name
         arguments = call.arguments or {}
         payload_text = payload.payload_content if payload else None
@@ -59,8 +59,9 @@ class SandboxManager:
             except Exception as e:
                 logger.error(f"LLM mock generation failed for '{tool_name}': {e}. Switching to heuristic mock.")
 
-        # Fallback heuristic mock generator
-        return self._generate_heuristic_mock(tool_name, arguments, payload_text)
+        # Deterministic schema-oriented response; this is a semantic simulator,
+        # not a claim that a live provider responded.
+        return self._generate_heuristic_mock(tool_name, arguments, payload_text, schema_info)
 
     def _generate_via_llm(
         self, tool_name: str, arguments: Dict[str, Any], schema_info: Dict[str, Any], payload_text: Optional[str]
@@ -107,7 +108,7 @@ class SandboxManager:
         )
 
     def _generate_heuristic_mock(
-        self, tool_name: str, arguments: Dict[str, Any], payload_text: Optional[str]
+        self, tool_name: str, arguments: Dict[str, Any], payload_text: Optional[str], schema_info: Any = None
     ) -> MockResponse:
         """
         Deterministic, fast fallback generator when LLM API is unavailable or times out.
@@ -120,30 +121,13 @@ class SandboxManager:
             "arguments_received": arguments,
         }
 
-        # Context-aware default fields based on tool name
-        if "ticket" in tool_name or "support" in tool_name or "read" in tool_name:
-            body_content = "Customer support ticket context: User is requesting account updates."
-            if payload_text:
-                body_content += f" [{payload_text}]"
-            data["ticket_id"] = arguments.get("ticket_id", 101)
-            data["body"] = body_content
-            data["priority"] = "high"
-        elif "email" in tool_name or "message" in tool_name:
-            body_content = "Received email: Urgent inquiry from customer."
-            if payload_text:
-                body_content += f" [{payload_text}]"
-            data["subject"] = "Support Request"
-            data["content"] = body_content
-            data["sender"] = "user@example.com"
-        elif "refund" in tool_name or "payment" in tool_name:
-            data["amount"] = arguments.get("amount", 0.0)
-            data["refund_status"] = "processed"
-            data["message"] = f"Refund processed successfully. {payload_text or ''}".strip()
-        else:
-            if payload_text:
-                data["details"] = f"Data context: {payload_text}"
-            else:
-                data["details"] = f"Mock response for {tool_name}"
+        properties = {}
+        if hasattr(schema_info, "parameters"):
+            properties = schema_info.parameters.get("properties", {})
+        elif isinstance(schema_info, dict):
+            properties = schema_info.get("parameters", schema_info).get("properties", {})
+        text_field = next((key for key, value in properties.items() if value.get("type") == "string"), "content")
+        data[text_field] = payload_text or "Deterministic sandbox response."
 
         json_str = json.dumps(data, indent=2, ensure_ascii=False)
 

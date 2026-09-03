@@ -47,16 +47,21 @@ def analyze_python_file(file_path: Path, relative_path: str) -> tuple[Optional[A
         'langchain': ['agents', 'tools']
     }
 
+    langgraph_constructs = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom):
             if node.module and 'agentveto' in node.module:
                 has_agentveto_import = True
             if node.module:
                 if any(m in node.module for m in agentic_modules):
-                    is_agentic = True
+                    # For langgraph, do not assume agentic just by import. Only crewai, autogen, smolagents, etc.
+                    if 'langgraph' not in node.module:
+                        is_agentic = True
                     for m in agentic_modules:
                         if m in node.module:
                             detected_framework = m
+                            if m != 'langgraph':
+                                is_agentic = True
                 for root_mod, sub_mods in agentic_submodules.items():
                     if root_mod in node.module and any(sub in node.module for sub in sub_mods):
                         is_agentic = True
@@ -71,10 +76,13 @@ def analyze_python_file(file_path: Path, relative_path: str) -> tuple[Optional[A
                 if 'agentveto' in alias.name:
                     has_agentveto_import = True
                 if any(m in alias.name for m in agentic_modules):
-                    is_agentic = True
+                    if 'langgraph' not in alias.name:
+                        is_agentic = True
                     for m in agentic_modules:
                         if m in alias.name:
                             detected_framework = m
+                            if m != 'langgraph':
+                                is_agentic = True
                 for root_mod, sub_mods in agentic_submodules.items():
                     if root_mod in alias.name and any(sub in alias.name for sub in sub_mods):
                         is_agentic = True
@@ -96,6 +104,15 @@ def analyze_python_file(file_path: Path, relative_path: str) -> tuple[Optional[A
                     source_file=relative_path,
                     line_number=node.lineno
                 ))
+        elif isinstance(node, ast.Call):
+            callee = node.func.id if isinstance(node.func, ast.Name) else (node.func.attr if isinstance(node.func, ast.Attribute) else "")
+            if callee in {"StateGraph", "MessageGraph", "create_react_agent", "compile", "ToolNode"}:
+                langgraph_constructs.add(callee)
+
+    # A LangGraph import alone is not agent evidence.  A graph construction or
+    # compilation call is static evidence of an executable agent topology.
+    if detected_framework == "langgraph" and langgraph_constructs:
+        is_agentic = True
     
     agent_candidate = None
     if tools or has_agentveto_import:
@@ -145,13 +162,29 @@ def discover_project(
     manifest.agents = agents
     if detected_project_framework:
         manifest.integration_type = detected_project_framework
-    
-    if manifest.integration_type and "langgraph" in manifest.integration_type:
+
+    # Configuration selects an adapter only after static evidence establishes
+    # that this is an agent. It never turns a RAG-only project into an agent.
+    from agentveto.ingestion.config_parser import parse_project_config
+    config = parse_project_config(extract_dir)
+    if config:
+        manifest.explicit_configuration = config
+        if config.get("invalid_entrypoint"):
+            manifest.errors.append("Invalid AgentVeto entrypoint syntax.")
+        elif config.get("adapter"):
+            manifest.integration_type = config["adapter"]
+            manifest.entrypoint = config.get("entrypoint")
+
+    if not manifest.agentic:
+        manifest.supported = False
+        manifest.integration_type = manifest.integration_type or ""
+        manifest.warnings.append("No static agentic construct was detected.")
+    elif manifest.integration_type == "langgraph":
         # LangGraph is supported
         manifest.supported = True
-    elif agents:
-        manifest.supported = True
-        manifest.integration_type = "python_interceptor"
+    elif manifest.integration_type:
+        manifest.supported = False
+        manifest.warnings.append(f"Unsupported agent framework: {manifest.integration_type}.")
     else:
         manifest.supported = False
         manifest.warnings.append("No supported AgentVeto integration detected. Current supported integrations: python_interceptor, langgraph.")

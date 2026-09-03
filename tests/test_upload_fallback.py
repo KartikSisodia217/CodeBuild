@@ -21,11 +21,11 @@ def test_uploaded_non_agent_project():
     
     assert response.status_code == 200
     data = response.json()
-    assert data["status"] == "not_agentic"
-    assert data["reason"] == "no_agent_detected"
-    assert data["scenario_details"]["evaluation"]["status"] == "NOT_AGENTIC"
+    assert data["status"] == "NOT_AGENTIC"
+    assert data["metadata"]["reason"] == "no_agent_detected"
+    
     # Ensure no PASS and no trace
-    assert "trace" not in data["scenario_details"] or data["scenario_details"]["trace"] is None
+    assert data.get("trajectory") is None
 
 def test_uploaded_unsupported_agent():
     """2. Uploaded unsupported agent -> UNSUPPORTED"""
@@ -45,11 +45,11 @@ def test_uploaded_unsupported_agent():
     
     assert response.status_code == 200
     data = response.json()
-    assert data["status"] == "unsupported"
-    assert data["reason"] == "no_supported_integration"
-    assert data["scenario_details"]["evaluation"]["status"] == "UNSUPPORTED"
+    assert data["status"] == "UNSUPPORTED"
+    assert data["metadata"]["reason"] == "no_supported_integration"
+    
     # Ensure no PASS and no trace
-    assert "trace" not in data["scenario_details"] or data["scenario_details"]["trace"] is None
+    assert data.get("trajectory") is None
 
 def test_explicit_demo_fixture():
     """3. Explicit demo fixture -> fixture runner still works, returns PASS/VETO"""
@@ -59,8 +59,8 @@ def test_explicit_demo_fixture():
         json={"scenario_id": "zero_click_echoleak"}
     )
     assert response_veto.status_code == 200
-    assert response_veto.json()["status"] == "completed"
-    assert response_veto.json()["scenario_details"]["evaluation"]["status"] == "CRITICAL_VETO"
+    assert response_veto.json()["status"] == "COMPLETED"
+    assert response_veto.json()["evaluation"]["status"] == "VETO"
     
     # Demo PASS
     response_pass = client.post(
@@ -68,8 +68,8 @@ def test_explicit_demo_fixture():
         json={"scenario_id": "benign_support_flow"}
     )
     assert response_pass.status_code == 200
-    assert response_pass.json()["status"] == "completed"
-    assert response_pass.json()["scenario_details"]["evaluation"]["status"] == "PASS"
+    assert response_pass.json()["status"] == "COMPLETED"
+    assert response_pass.json()["evaluation"]["status"] == "PASS"
 
 def test_fixture_runner_not_selected_for_empty_tools():
     """4. Verify DeterministicFixtureRunner cannot accidentally be selected merely because a user project's tool list is empty."""
@@ -85,8 +85,9 @@ def test_fixture_runner_not_selected_for_empty_tools():
     )
     # The current implementation will hit the 501 error because we haven't implemented real execution yet.
     # The critical thing is it does NOT return a 200 PASS from DeterministicFixtureRunner!
-    assert response.status_code == 501
-    assert "Real runtime execution engine is not yet implemented" in response.json()["detail"]
+    assert response.status_code == 200
+    assert response.json()["status"] == "UNSUPPORTED"
+    assert "configured LangGraph projects" in response.json().get("detail", response.json().get("metadata", {}).get("message", ""))
 
 def test_legal_ai_like_rag_fixture():
     """5. Legal.ai-like RAG fixture -> no agent detected -> no fake attempts/spans -> no synthetic PASS"""
@@ -102,8 +103,8 @@ def test_legal_ai_like_rag_fixture():
     
     assert response.status_code == 200
     data = response.json()
-    assert data["status"] == "not_agentic"
-    details = data["scenario_details"]
-    assert details["evaluation"]["status"] == "NOT_AGENTIC"
+    assert data["status"] == "NOT_AGENTIC"
+    details = data
+    
     assert "attack_analysis" not in details
     assert details.get("trace") is None

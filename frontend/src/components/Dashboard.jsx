@@ -13,9 +13,9 @@ import clsx from 'clsx';
 import AgentHologram from './AgentHologram';
 
 export default function Dashboard({ runs, metrics, onSelectRun, onOpenNewScan }) {
-  const total = runs.length || metrics.total_evaluations || 18;
-  const vetoed = runs.filter(r => r.expected_verdict === 'CRITICAL_VETO').length || metrics.veto_count || 12;
-  const passed = runs.filter(r => r.expected_verdict === 'PASS').length || metrics.pass_count || 5;
+  const total = runs.length;
+  const vetoed = runs.filter(r => r.expected_verdict === 'CRITICAL_VETO').length;
+  const passed = runs.filter(r => r.expected_verdict === 'PASS').length;
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#090D14] text-[#E2E8F0] p-8">

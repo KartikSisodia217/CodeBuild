@@ -5,7 +5,7 @@ Owner: Policy & Evidence Engineer (Member 4)
 
 import json
 import os
-from agentveto.contracts.schemas import TrajectoryData, EvaluationStatus
+from agentveto.contracts.schemas import TrajectoryData, SecurityVerdict
 from agentveto.evaluator.policy_engine import evaluate_trace
 from agentveto.registry.evidence_graph import EvidenceGraphBuilder
 

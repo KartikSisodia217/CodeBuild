@@ -18,8 +18,7 @@ from agentveto.contracts.schemas import (
     StateDiff,
     PolicyRule,
     EvaluationResult,
-    EvaluationStatus,
-    OWASPThreatCategory,
+    SecurityVerdict,
     OpenInferenceSpan,
     SpanKind,
 )
@@ -68,6 +67,16 @@ class PolicyEngine:
         Deterministically evaluates an execution trajectory and returns a PASS, WARN, or CRITICAL_VETO verdict.
         """
         start_time = time.time()
+        # A trace is execution evidence.  No observation means no security
+        # claim: callers must expose a null verdict, never a fabricated PASS.
+        if not trace.spans:
+            return EvaluationResult(
+                run_id=trace.run_id,
+                status=None,
+                reason="No execution observations were captured; verdict unavailable.",
+                latency_ms=round((time.time() - start_time) * 1000.0, 2),
+                details={"evaluation_mode": "deterministic_policy_v1", "evaluated": False},
+            )
         rules_to_use = custom_rules or self.rules
         rule_map = {r.sink_tool: r for r in rules_to_use}
 
@@ -77,7 +86,7 @@ class PolicyEngine:
         violating_tool_name: Optional[str] = None
         matched_rule: Optional[PolicyRule] = None
         violation_reason = ""
-        threat_cat: Optional[OWASPThreatCategory] = None
+        threat_cat: Optional[str] = None
         details: Dict[str, Any] = {}
 
         # 1. Identify actual payload injections.  A known source alone is never evidence of an
@@ -129,7 +138,7 @@ class PolicyEngine:
                     if regex.search(param_str):
                         violating_span_id = span.span_id
                         violating_tool_name = tool_name
-                        threat_cat = OWASPThreatCategory.MCP10_DATA_EXFILTRATION
+                        threat_cat = "MCP10: Sensitive Data Exfiltration"
                         violation_reason = (
                             f"Sensitive Data Exfiltration (MCP10 / DLP Violation): Detected pattern {pattern_name} "
                             f"in arguments of tool '{tool_name}'."
@@ -139,8 +148,8 @@ class PolicyEngine:
                             name=f"DLP_SENSITIVE_DATA_LEAK_{pattern_name}",
                             sink_tool=tool_name,
                             description=f"Secret or PII pattern {pattern_name} leaked in tool arguments.",
-                            severity=EvaluationStatus.CRITICAL_VETO,
-                            threat_category=OWASPThreatCategory.MCP10_DATA_EXFILTRATION
+                            severity=SecurityVerdict.VETO,
+                            threat_category="MCP10: Sensitive Data Exfiltration"
                         )
                         dlp_matched = True
                         break
@@ -178,7 +187,7 @@ class PolicyEngine:
             if state_diff.unauthorized_changes:
                 if not violating_span_id:
                     violating_span_id = trace.spans[-1].span_id if trace.spans else "span_unknown"
-                    threat_cat = OWASPThreatCategory.ASI04_UNBOUNDED_ACTION
+                    threat_cat = "ASI04: Unbounded Financial / Environmental Action"
                     violation_reason = (
                         f"State Invariant Violation: Unauthorized state changes detected: "
                         f"{', '.join(state_diff.unauthorized_changes)}."
@@ -188,8 +197,8 @@ class PolicyEngine:
                         name="UNAUTHORIZED_STATE_MUTATION",
                         sink_tool="state_manager",
                         description="State diff indicates forbidden backend state modification.",
-                        severity=EvaluationStatus.CRITICAL_VETO,
-                        threat_category=OWASPThreatCategory.ASI04_UNBOUNDED_ACTION
+                        severity=SecurityVerdict.VETO,
+                        threat_category="ASI04: Unbounded Financial / Environmental Action"
                     )
 
         # 4. Check for Cascading Loops (ASI08)
@@ -210,13 +219,13 @@ class PolicyEngine:
         elapsed_ms = (time.time() - start_time) * 1000.0
 
         if violating_span_id:
-            status = EvaluationStatus.CRITICAL_VETO
+            status = SecurityVerdict.VETO
         elif is_looping:
-            status = EvaluationStatus.WARN
-            threat_cat = OWASPThreatCategory.ASI08_CASCADING_FAILURE
+            status = SecurityVerdict.VETO
+            threat_cat = "ASI08: Cascading Tool Loops & Retry Storms"
             violation_reason = f"Cascading Tool Loop (ASI08): Excessive repeated tool calls detected: {consecutive_tool_calls}."
         else:
-            status = EvaluationStatus.PASS
+            status = SecurityVerdict.PASS
             violation_reason = "All security invariants verified. No unauthorized sink tool calls or data leaks detected."
 
         return EvaluationResult(

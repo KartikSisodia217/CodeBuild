@@ -17,7 +17,7 @@ export default function RegressionView({ data }) {
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  if (!data || !data.yaml_content) {
+  if (!data || !data.metadata?.yaml_content) {
     return (
       <div className="p-8 text-center text-slate-500 font-mono text-xs">
         No regression specification generated.
@@ -26,19 +26,19 @@ export default function RegressionView({ data }) {
   }
 
   const evaluation = data.evaluation || {};
-  const isVeto = evaluation.status === 'CRITICAL_VETO';
+  const isVeto = data.verdict === 'VETO';
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(data.yaml_content);
+    navigator.clipboard.writeText(data.metadata?.yaml_content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownload = () => {
     const element = document.createElement("a");
-    const file = new Blob([data.yaml_content], { type: 'text/yaml' });
+    const file = new Blob([data.metadata?.yaml_content], { type: 'text/yaml' });
     element.href = URL.createObjectURL(file);
-    element.download = `${data.scenario_id}_regression_spec.yaml`;
+    element.download = `${data.run_id}_regression_spec.yaml`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -103,7 +103,7 @@ export default function RegressionView({ data }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="p-4 rounded-xl bg-[#121824] border border-slate-800">
           <span className="text-[10px] font-mono text-slate-500 uppercase">Test Identifier</span>
-          <div className="text-xs font-bold text-white font-mono mt-0.5">{data.scenario_id}</div>
+          <div className="text-xs font-bold text-white font-mono mt-0.5">{data.run_id}</div>
         </div>
 
         <div className="p-4 rounded-xl bg-[#121824] border border-slate-800">
@@ -113,7 +113,7 @@ export default function RegressionView({ data }) {
 
         <div className="p-4 rounded-xl bg-[#121824] border border-slate-800">
           <span className="text-[10px] font-mono text-slate-500 uppercase">Expected Adjudication</span>
-          <div className="text-xs font-bold text-indigo-400 font-mono mt-0.5">{evaluation.status || 'CRITICAL_VETO'}</div>
+          <div className="text-xs font-bold text-indigo-400 font-mono mt-0.5">{data.verdict || 'VETO'}</div>
         </div>
       </div>
 
@@ -147,7 +147,7 @@ export default function RegressionView({ data }) {
         </div>
 
         <div className="p-6 bg-[#06080e] overflow-x-auto text-xs font-mono">
-          <YamlViewer content={data.yaml_content} />
+          <YamlViewer content={data.metadata?.yaml_content} />
         </div>
 
       </div>

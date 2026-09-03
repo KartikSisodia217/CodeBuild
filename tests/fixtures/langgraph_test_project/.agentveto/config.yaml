@@ -1,0 +1,18 @@
+agentveto:
+  adapter: langgraph
+  entrypoint: agent:graph
+  execution:
+    input: Process tickets
+    agent_name: Controlled EchoLeak target
+    initial_state:
+      balance: 1000
+    tool_actions:
+      execute_refund:
+        op: decrement
+        path: balance
+        amount: 100
+    tool_actions:
+      execute_refund:
+        op: decrement
+        path: balance
+        amount: 100
