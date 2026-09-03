@@ -132,7 +132,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full bg-[#0B0F17] text-slate-100 font-sans overflow-hidden select-none">
+    <div className="flex flex-col h-screen w-full bg-[#090D14] text-[#E2E8F0] font-sans overflow-hidden select-none">
       
       {/* Top Global Navigation Bar */}
       <Navbar
@@ -170,17 +170,17 @@ export default function App() {
 
       {/* VIEW 4: RUN DETAILS WORKSPACE (SCREENS 4 - 10) */}
       {currentView === 'details' && (
-        <div className="flex-1 flex flex-col min-w-0 bg-[#07090e] overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 bg-[#090D14] overflow-hidden">
           
           {/* Subheader with Target Agent, Verdict, and Primary Tabs */}
-          <header className="h-16 border-b border-slate-800/80 bg-[#0B0F17] px-8 flex items-center justify-between shrink-0 z-20">
+          <header className="h-16 border-b border-[#1F293D] bg-[#0E131F]/90 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-20">
             
             {/* Target Agent & Run ID */}
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2 text-xs font-mono text-slate-400">
                 <span 
                   onClick={() => setCurrentView('dashboard')}
-                  className="hover:text-indigo-400 cursor-pointer"
+                  className="hover:text-indigo-400 cursor-pointer font-semibold"
                 >
                   Runs
                 </span>
@@ -189,9 +189,9 @@ export default function App() {
                   {scenarioData?.metadata?.run_number || '#AV-1042'}
                 </span>
               </div>
-              <div className="h-4 w-[1px] bg-slate-800" />
+              <div className="h-4 w-[1px] bg-[#1F293D]" />
               <div className="flex items-center space-x-2">
-                <h2 className="text-sm font-bold text-white tracking-wide">
+                <h2 className="text-sm font-bold text-white tracking-tight">
                   {scenarioData?.metadata?.agent_name || 'Target Agent'}
                 </h2>
                 <span className="text-xs text-slate-500 font-mono">
@@ -202,12 +202,12 @@ export default function App() {
 
             {/* Tabs: Overview, Attack, Trace, Evidence, Regression */}
             <div className="flex items-center space-x-3">
-              <div className="flex bg-[#121824] p-1 rounded-xl border border-slate-800 space-x-1">
+              <div className="flex bg-[#090D14] p-1 rounded-xl border border-[#1F293D] space-x-1">
                 <button
                   onClick={() => setActiveTab('overview')}
                   className={clsx(
-                    "px-3 py-1.5 text-xs font-semibold rounded-lg flex items-center space-x-1.5 transition-all",
-                    activeTab === 'overview' ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30" : "text-slate-400 hover:text-white"
+                    "px-3 py-1.5 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-all font-sans",
+                    activeTab === 'overview' ? "bg-[#1F293D] text-white shadow-sm" : "text-slate-400 hover:text-white"
                   )}
                 >
                   <FileText className="w-3.5 h-3.5" />
@@ -217,8 +217,8 @@ export default function App() {
                 <button
                   onClick={() => setActiveTab('attack')}
                   className={clsx(
-                    "px-3 py-1.5 text-xs font-semibold rounded-lg flex items-center space-x-1.5 transition-all",
-                    activeTab === 'attack' ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30" : "text-slate-400 hover:text-white"
+                    "px-3 py-1.5 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-all font-sans",
+                    activeTab === 'attack' ? "bg-[#1F293D] text-white shadow-sm" : "text-slate-400 hover:text-white"
                   )}
                 >
                   <Crosshair className="w-3.5 h-3.5 text-amber-400" />
@@ -228,8 +228,8 @@ export default function App() {
                 <button
                   onClick={() => setActiveTab('trace')}
                   className={clsx(
-                    "px-3 py-1.5 text-xs font-semibold rounded-lg flex items-center space-x-1.5 transition-all",
-                    activeTab === 'trace' ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30" : "text-slate-400 hover:text-white"
+                    "px-3 py-1.5 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-all font-sans",
+                    activeTab === 'trace' ? "bg-[#1F293D] text-white shadow-sm" : "text-slate-400 hover:text-white"
                   )}
                 >
                   <Clock className="w-3.5 h-3.5" />
@@ -239,8 +239,8 @@ export default function App() {
                 <button
                   onClick={() => setActiveTab('evidence')}
                   className={clsx(
-                    "px-3 py-1.5 text-xs font-semibold rounded-lg flex items-center space-x-1.5 transition-all",
-                    activeTab === 'evidence' ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30" : "text-slate-400 hover:text-white"
+                    "px-3 py-1.5 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-all font-sans",
+                    activeTab === 'evidence' ? "bg-[#1F293D] text-white shadow-sm" : "text-slate-400 hover:text-white"
                   )}
                 >
                   <Layers className="w-3.5 h-3.5" />
@@ -250,8 +250,8 @@ export default function App() {
                 <button
                   onClick={() => setActiveTab('regression')}
                   className={clsx(
-                    "px-3 py-1.5 text-xs font-semibold rounded-lg flex items-center space-x-1.5 transition-all",
-                    activeTab === 'regression' ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30" : "text-slate-400 hover:text-white"
+                    "px-3 py-1.5 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-all font-sans",
+                    activeTab === 'regression' ? "bg-[#1F293D] text-white shadow-sm" : "text-slate-400 hover:text-white"
                   )}
                 >
                   <FileCode2 className="w-3.5 h-3.5" />
@@ -263,7 +263,7 @@ export default function App() {
               <button
                 onClick={handleReEvaluate}
                 disabled={evaluating}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 border border-slate-700 flex items-center space-x-1.5 transition-colors"
+                className="px-3 py-1.5 rounded-xl bg-[#090D14] hover:bg-[#151B28] text-xs font-bold text-slate-300 border border-[#1F293D] flex items-center space-x-1.5 transition-colors font-sans"
               >
                 <RefreshCw className={clsx("w-3.5 h-3.5 text-indigo-400", evaluating && "animate-spin")} />
                 <span>Re-Evaluate</span>
@@ -279,7 +279,7 @@ export default function App() {
               {loading && !scenarioData ? (
                 <div className="p-12 text-center text-slate-500 font-mono text-xs flex items-center justify-center space-x-2">
                   <RefreshCw className="w-4 h-4 animate-spin text-indigo-400" />
-                  <span>Loading adjudication data...</span>
+                  <span>Loading adjudication telemetry...</span>
                 </div>
               ) : (
                 <>
