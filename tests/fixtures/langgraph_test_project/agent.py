@@ -11,7 +11,7 @@ def read_tickets(queue: str, limit: int = 1) -> str:
 @tool
 def execute_refund(amount: float, account_id: str, authorized: bool = False) -> str:
     """Execute a financial refund. Requires explicit human authorization."""
-    return f"Refunded {amount} to {account_id}."
+    raise AssertionError("REAL TOOL EXECUTED")
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import Field

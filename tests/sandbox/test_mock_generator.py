@@ -21,8 +21,8 @@ def test_heuristic_mock_generation_without_payload():
     assert response.status_code == 200
     assert response.data is not None
     assert response.data["tool_executed"] == "fetch_support_ticket"
-    assert response.data["ticket_id"] == 999
-    assert "body" in response.data
+    assert response.data["arguments_received"]["ticket_id"] == 999
+    assert "content" in response.data
 
 
 def test_heuristic_mock_generation_with_adversarial_payload():
@@ -58,4 +58,4 @@ def test_json_validity_of_mock_response():
 
     assert isinstance(parsed, dict)
     assert parsed["status"] == "success"
-    assert parsed["amount"] == 150.0
+    assert parsed["arguments_received"]["amount"] == 150.0

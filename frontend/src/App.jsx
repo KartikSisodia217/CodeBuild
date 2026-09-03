@@ -114,7 +114,7 @@ export default function App() {
     setLoading(true);
     try {
       const res = await axios.post('http://127.0.0.1:8000/api/scan', config);
-      setCurrentScanConfig({ ...config, scanResult: res.data.scenario_details });
+      setCurrentScanConfig({ ...config, scanResult: res.data });
       setCurrentView('progress');
       await fetchMetrics();
     } catch (err) {
@@ -315,20 +315,20 @@ export default function App() {
 
                   {activeTab === 'attack' && (
                     <AttackAnalysis 
-                      attackData={scenarioData?.attack_analysis} 
+                      attackData={scenarioData?.threat_model} 
                     />
                   )}
 
                   {activeTab === 'trace' && (
                     <ExecutionTrace 
-                      trace={scenarioData?.trace} 
+                      trace={scenarioData?.trajectory} 
                       evaluation={scenarioData?.evaluation} 
                     />
                   )}
 
                   {activeTab === 'evidence' && (
                     <EvidenceView 
-                      dag={scenarioData?.dag} 
+                      dag={scenarioData?.evidence} 
                       evaluation={scenarioData?.evaluation} 
                       stateDiff={scenarioData?.state_diff} 
                     />

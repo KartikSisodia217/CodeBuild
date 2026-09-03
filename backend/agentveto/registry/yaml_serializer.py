@@ -13,12 +13,12 @@ from typing import Optional, Dict, Any
 from agentveto.contracts.schemas import (
     TrajectoryData,
     EvaluationResult,
-    EvaluationStatus,
+    SecurityVerdict,
     StateDiff,
     RegressionTestSpec,
     AttackVectorSpec,
     ExpectedAdjudicationSpec,
-    OWASPThreatCategory,
+    
     SpanKind,
 )
 from agentveto.evaluator.policy_engine import evaluate_trace
@@ -57,7 +57,7 @@ class YamlRegressionSerializer:
         threat_category_str = (
             eval_result.threat_category.value
             if hasattr(eval_result.threat_category, "value")
-            else (str(eval_result.threat_category) if eval_result.threat_category else OWASPThreatCategory.ASI01_GOAL_HIJACK.value)
+            else (str(eval_result.threat_category) if eval_result.threat_category else "ASI01_GOAL_HIJACK")
         )
 
         test_id = f"reg-{eval_result.violating_tool or 'exploit'}-{trace.run_id[-6:]}"
@@ -79,7 +79,7 @@ class YamlRegressionSerializer:
                 threat_category=threat_category_str
             ),
             expected_adjudication=ExpectedAdjudicationSpec(
-                verdict=eval_result.status if isinstance(eval_result.status, EvaluationStatus) else EvaluationStatus(eval_result.status),
+                verdict=eval_result.status if isinstance(eval_result.status, SecurityVerdict) else SecurityVerdict(eval_result.status),
                 violation_rule=eval_result.rule_name or "RESTRICTED_SINK_VIOLATION",
                 state_invariant=state_invariant
             )
@@ -119,7 +119,7 @@ class YamlRegressionSerializer:
         verdict_matches = verdict_val == expected_val
 
         # Rule verification: if spec expects a specific rule, the actual rule must match.
-        # Do NOT bypass on CRITICAL_VETO status — that masks mismatched rules.
+        # Do NOT bypass on VETO status — that masks mismatched rules.
         rule_matches = (
             not spec.expected_adjudication.violation_rule
             or actual_eval.rule_name == spec.expected_adjudication.violation_rule

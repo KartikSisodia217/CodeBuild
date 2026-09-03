@@ -1,0 +1,6 @@
+agentveto:
+  adapter: langgraph
+  entrypoint: benign_agent:graph
+  execution:
+    input: Process tickets
+    agent_name: Controlled safe-support target

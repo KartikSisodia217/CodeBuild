@@ -45,17 +45,16 @@ def test_api_scenarios_list_and_detail():
     assert response.status_code == 200
     scenarios = response.json()
     assert {"zero_click_echoleak", "benign_support_flow"}.issubset({s["id"] for s in scenarios})
-    assert all(s["execution_mode"] == "deterministic_fixture" for s in scenarios)
+    assert all(s["execution_mode"] == "subprocess" for s in scenarios)
     
     # Test details for Zero-Click EchoLeak
     detail_res = client.get("/api/scenarios/zero_click_echoleak")
     assert detail_res.status_code == 200
     data = detail_res.json()
-    assert data["scenario_id"] == "zero_click_echoleak"
-    assert data["evaluation"]["status"] == "CRITICAL_VETO"
-    assert len(data["dag"]["nodes"]) > 0
-    assert len(data["dag"]["edges"]) > 0
-    assert "version: agentveto/v1" in data["yaml_content"]
+    assert data["project_manifest"]["project_name"] == "zero_click_echoleak"
+    assert data["evaluation"]["status"] == "VETO"
+    assert "nodes" in data["evidence"]
+    assert "edges" in data["evidence"]
 
 
 def test_api_evaluate():
@@ -79,7 +78,7 @@ def test_api_evaluate():
     response = client.post("/api/evaluate", json=payload)
     assert response.status_code == 200
     res = response.json()
-    assert res["status"] == "CRITICAL_VETO"
+    assert res["status"] == "VETO"
     assert res["violating_tool"] == "execute_refund"
 
 

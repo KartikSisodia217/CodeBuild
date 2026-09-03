@@ -49,8 +49,8 @@ def my_custom_tool(param1: str):
     manifest = response.json()
     
     assert manifest["project_name"] == "project.zip"
-    assert manifest["supported"] is True
-    assert manifest["integration_type"] == "python_interceptor"
+    assert manifest["supported"] is False
+    assert manifest["integration_type"] == ""
     
     assert len(manifest["agents"]) == 1
     agent = manifest["agents"][0]
@@ -87,7 +87,7 @@ def test_malicious_archive_traversal():
     
     response = client.post("/api/projects/analyze", files={"file": ("project.zip", memory_file, "application/zip")})
     assert response.status_code == 400
-    assert "Malicious archive path" in response.json()["detail"]
+    assert "Malicious archive path" in response.json().get("detail", response.json().get("metadata", {}).get("message", ""))
 
 
 def test_absolute_path_archive():
@@ -98,7 +98,7 @@ def test_absolute_path_archive():
     
     response = client.post("/api/projects/analyze", files={"file": ("project.zip", memory_file, "application/zip")})
     assert response.status_code == 400
-    assert "Malicious archive path" in response.json()["detail"]
+    assert "Malicious archive path" in response.json().get("detail", response.json().get("metadata", {}).get("message", ""))
 
 
 def test_oversized_file(monkeypatch):
@@ -112,25 +112,25 @@ def test_oversized_file(monkeypatch):
     
     response = client.post("/api/projects/analyze", files={"file": ("project.zip", zip_bytes, "application/zip")})
     assert response.status_code == 400
-    assert "exceeds maximum size" in response.json()["detail"]
+    assert "exceeds maximum size" in response.json().get("detail", response.json().get("metadata", {}).get("message", ""))
 
 
 def test_existing_demo_veto():
     response = client.post("/api/scan", json={"scenario_id": "zero_click_echoleak"})
     assert response.status_code == 200
     data = response.json()
-    assert data["scenario_details"]["metadata"]["expected_verdict"] == "CRITICAL_VETO"
+    assert data["evaluation"]["status"] == "VETO"
 
 
 def test_existing_demo_pass():
     response = client.post("/api/scan", json={"scenario_id": "benign_support_flow"})
     assert response.status_code == 200
     data = response.json()
-    assert data["scenario_details"]["metadata"]["expected_verdict"] == "PASS"
+    assert data["evaluation"]["status"] == "PASS"
 
 
 def test_uploaded_project_scan():
-    # Test that we can scan an uploaded project and get a synthetic trace
+    # An unsupported legacy interceptor project is never executed.
     agent_code = """
 from agentveto.core.decorator import intercept
 
@@ -150,8 +150,9 @@ def test_delete_user(user_id: int): pass
     
     # Scan
     scan_resp = client.post("/api/scan", json={"project_manifest": manifest})
-    assert scan_resp.status_code == 501
-    assert "Real runtime execution engine is not yet implemented" in scan_resp.json()["detail"]
+    assert scan_resp.status_code == 200
+    assert scan_resp.json()["status"] == "UNSUPPORTED"
+    assert "no supported AgentVeto runtime integration" in scan_resp.json().get("detail", scan_resp.json().get("metadata", {}).get("message", ""))
 
 
 def test_ignored_large_sqlite_and_directories(monkeypatch):
@@ -178,7 +179,7 @@ def my_tool(): pass
     assert response.status_code == 200
     manifest = response.json()
     
-    assert manifest["supported"] is True
+    assert manifest["supported"] is False
     assert len(manifest["agents"]) == 1
     
     agent = manifest["agents"][0]
@@ -197,5 +198,4 @@ def test_oversized_source_file_rejected(monkeypatch):
     
     response = client.post("/api/projects/analyze", files={"file": ("project.zip", zip_bytes, "application/zip")})
     assert response.status_code == 400
-    assert "exceeds maximum size" in response.json()["detail"]
-
+    assert "exceeds maximum size" in response.json().get("detail", response.json().get("metadata", {}).get("message", ""))

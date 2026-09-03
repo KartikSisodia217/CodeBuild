@@ -42,7 +42,7 @@ def test_threat_modeler_only_sinks():
 
 def test_attack_plan_generation():
     threat_model = ThreatModel(
-        vulnerable_tools=[ASIVector(tool="issue_refund", vector="ASI01", confidence=0.9)],
+        vulnerable_tools=[ASIVector(tool_name="issue_refund", vector="ASI01", confidence=0.9)],
         source_tools=["read_tickets"],
         sink_tools=["issue_refund"],
         has_source_sink_pair=True

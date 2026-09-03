@@ -1,192 +1,120 @@
 """
 AgentVeto Interface Contracts — Pydantic Schemas
 
-These schemas define the data contracts between all AgentVeto subsystems.
-They are the single source of truth for all inter-component communication.
-
-Frozen after Phase 0 (Hour 4). Changes require team sync.
+These schemas define the single canonical data contracts between all AgentVeto subsystems.
 """
-
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from datetime import datetime, timezone
 import uuid
 
+# ─── 1. Canonical Scan & Project Lifecycle Enums ─────────────────────────────
 
-# ─── Enums ───────────────────────────────────────────────────────────────────
+class ScanStatus(str, Enum):
+    NOT_STARTED = "NOT_STARTED"
+    ANALYZING = "ANALYZING"
+    NOT_AGENTIC = "NOT_AGENTIC"
+    UNSUPPORTED = "UNSUPPORTED"
+    UNSUPPORTED_ENTRYPOINT = "UNSUPPORTED_ENTRYPOINT"
+    EXECUTING = "EXECUTING"
+    EXECUTION_FAILED = "EXECUTION_FAILED"
+    EXECUTION_UNAVAILABLE = "EXECUTION_UNAVAILABLE"
+    COMPLETED = "COMPLETED"
 
+class SecurityVerdict(str, Enum):
+    PASS = "PASS"
+    VETO = "VETO"
 
-# --- Enums (from Member 4) ---
 class SpanKind(str, Enum):
     AGENT = "AGENT"
     TOOL = "TOOL"
     LLM = "LLM"
     CHAIN = "CHAIN"
-
-
-class EvaluationStatus(str, Enum):
-    PASS = "PASS"
-    WARN = "WARN"
-    CRITICAL_VETO = "CRITICAL_VETO"
-
-
-class OWASPThreatCategory(str, Enum):
-    ASI01_GOAL_HIJACK = "ASI01: Agent Goal Hijacking (Indirect Prompt Injection)"
-    ASI02_TOOL_MISUSE = "ASI02: Tool Misuse & Unauthorized Invocation"
-    ASI03_PRIVILEGE_ESCALATION = "ASI03: Privilege Escalation & Confused Deputy"
-    ASI04_UNBOUNDED_ACTION = "ASI04: Unbounded Financial / Environmental Action"
-    ASI06_MEMORY_POISONING = "ASI06: Memory & RAG State Poisoning"
-    ASI08_CASCADING_FAILURE = "ASI08: Cascading Tool Loops & Retry Storms"
-    MCP10_DATA_EXFILTRATION = "MCP10: Sensitive Data Exfiltration"
-    UNKNOWN = "UNKNOWN: General Security Anomaly"
-
-
-
-# Legacy aliases — kept for backward compatibility with imported test fixtures.
-VetoStatus = EvaluationStatus
-ASICategory = OWASPThreatCategory
-
+    SANDBOX = "SANDBOX"
+    STATE_CHANGE = "STATE_CHANGE"
+    POLICY = "POLICY"
 
 class ToolCapability(str, Enum):
-    """Tool capability classification."""
-    DATA_SOURCE = "DATA_SOURCE"  # Read operations
-    SINK = "SINK"                # State-changing operations
-    DUAL = "DUAL"                # Both read and write
-    NEUTRAL = "NEUTRAL"          # No significant security impact
+    DATA_SOURCE = "DATA_SOURCE"
+    SINK = "SINK"
+    DUAL = "DUAL"
+    NEUTRAL = "NEUTRAL"
 
+# ─── 2. Ingestion & Discovery ────────────────────────────────────────────────
 
-# ─── Agent Adapter Contracts ─────────────────────────────────────────────────
+class ProjectWorkspace(BaseModel):
+    project_id: str = Field(default_factory=lambda: f"proj_{uuid.uuid4().hex[:8]}")
+    source_type: str = Field(..., description="zip, github, or controlled")
+    repository: Optional[str] = None
+    revision: Optional[str] = None
+    workspace_path: str = Field(..., description="Path to extracted directory")
+
+class ToolCandidate(BaseModel):
+    name: str
+    source_file: str
+    schema_hint: Optional[Dict[str, Any]] = None
+    line_number: Optional[int] = None
+
+class AgentCandidate(BaseModel):
+    name: str
+    file: str
+    entry_point: Optional[str] = None
+    integration: str
+    tools: List[ToolCandidate] = Field(default_factory=list)
+
+class ProjectManifest(BaseModel):
+    project_id: str = Field(default_factory=lambda: f"proj_{uuid.uuid4().hex[:8]}")
+    project_name: str = "Unknown Project"
+    language: str = "python"
+    frameworks: List[str] = Field(default_factory=list)
+    agentic_signals: List[str] = Field(default_factory=list)
+    detected_tools: List[ToolCandidate] = Field(default_factory=list)
+    data_sources: List[str] = Field(default_factory=list)
+    data_sinks: List[str] = Field(default_factory=list)
+    agentveto_integration: Optional[str] = None
+    supported_adapter: Optional[str] = None
+    explicit_configuration: Optional[Dict[str, Any]] = None
+    entrypoint: Optional[str] = None
+    agents: List[AgentCandidate] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
+    errors: List[str] = Field(default_factory=list)
+    agentic: bool = False
+    supported: bool = False
+    integration_type: str = ""
+    source_type: str = "zip"
+    repository: Optional[str] = None
+    revision: Optional[str] = None
+
+# ─── 3. Scan & Execution ─────────────────────────────────────────────────────
+
+class ScanRequest(BaseModel):
+    project_id: Optional[str] = None
+    github_url: Optional[str] = None
+    scenario_id: Optional[str] = None
 
 class ToolSchema(BaseModel):
-    """Schema describing a single tool available to the target agent."""
-    name: str = Field(..., description="Tool function name")
-    description: str = Field(default="", description="Human-readable description")
-    parameters: Dict[str, Any] = Field(default_factory=dict, description="JSON Schema of tool parameters")
-    required: List[str] = Field(default_factory=list, description="List of required parameter names")
-
+    name: str
+    description: str = ""
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+    required: List[str] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 class InterceptedCall(BaseModel):
-    """Data captured when a tool call is intercepted by the Agent Adapter.
-    
-    Maintains backward compatibility with Member 3's SandboxManager via
-    schema_definition alias.
-    """
-    tool_name: str = Field(..., description="Name of the intercepted tool")
-    arguments: Dict[str, Any] = Field(default_factory=dict, description="Arguments passed to the tool")
-    run_id: str = Field(..., description="Unique identifier for this execution run")
-    schema_definition: Optional[Dict[str, Any]] = Field(default=None, description="Schema of the intercepted tool (legacy)")
-    context: Optional[Dict[str, Any]] = Field(default=None, description="Additional execution context")
-    tool_schema: Optional[ToolSchema] = Field(default=None, description="Structured schema of the intercepted tool")
-    timestamp: Optional[datetime] = Field(default=None)
-
-
-# ─── Threat Modeler Contracts ────────────────────────────────────────────────
-
-class ASIVector(BaseModel):
-    """A single OWASP ASI threat vector identified for a tool.
-    
-    Fields 'tool' and 'vector' are kept for backward compatibility with
-    Member 1's original tests. New code should prefer 'tool_name' style access.
-    """
-    tool: str = Field(..., description="The tool this vector applies to")
-    vector: str = Field(..., description="The ASI category string (e.g., 'ASI01', 'MCP10')")
-    capability: ToolCapability = Field(default=ToolCapability.NEUTRAL, description="Tool capability classification")
-    confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Confidence score")
-    description: str = Field(default="", description="Human-readable description of the threat")
-
-    @property
-    def tool_name(self) -> str:
-        return self.tool
-
-    @property
-    def asi_category(self) -> ASICategory:
-        return ASICategory(self.vector)
-
-
-class ThreatModel(BaseModel):
-    """Complete threat model for a set of tools."""
-    vulnerable_tools: List[ASIVector] = Field(default_factory=list, description="Identified threat vectors")
-    risk_vectors: List[str] = Field(default_factory=list, description="Unique risk category strings found")
-    source_tools: List[str] = Field(default_factory=list, description="Tools classified as data sources")
-    sink_tools: List[str] = Field(default_factory=list, description="Tools classified as sinks")
-    has_source_sink_pair: bool = Field(default=False, description="Whether both source and sink tools exist")
-    overall_risk: str = Field(default="LOW", description="Overall risk assessment: LOW, MEDIUM, HIGH, CRITICAL")
-
-
-# ─── Adversarial Engine Contracts ────────────────────────────────────────────
-
-class AttackPlan(BaseModel):
-    """Structured plan for an adversarial attack.
-    
-    Maintains backward compatibility with the original field names
-    (vector, injection_point, success_condition) while adding new fields.
-    """
-    target_tool: str = Field(..., description="The tool to target with the attack")
-    vector: str = Field(..., description="The ASI vector being exploited (e.g., 'ASI01')")
-    attack_strategy: str = Field(..., description="High-level description of the attack approach")
-    injection_point: str = Field(default="tool_response", description="Where to inject the payload")
-    success_condition: str = Field(default="", description="What constitutes attack success")
-    attack_objective: str = Field(default="", description="What the attack aims to achieve")
-    source_tool: Optional[str] = Field(default=None, description="Data source tool to poison")
-    sink_tool: Optional[str] = Field(default=None, description="Sink tool the agent should be tricked into calling")
-    contextual_constraints: Dict[str, Any] = Field(default_factory=dict, description="Additional attack constraints")
-
-
-class AttackPayload(BaseModel):
-    """Generated adversarial payload.
-    
-    Maintains backward compatibility with Member 3's SandboxManager via
-    payload_content field. The 'payload' property provides cleaner access.
-    """
-    payload_content: str = Field(..., description="The malicious content to inject")
-    target_node: Optional[str] = Field(default=None, description="Tool whose response will contain this payload (legacy)")
-    target_tool: str = Field(default="", description="Tool whose response will contain this payload")
-    attack_vector: str = Field(default="ASI01", description="The ASI vector this payload exploits")
-    content_type: str = Field(default="indirect_prompt_injection", description="Type of attack content")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional payload metadata")
-
-    @property
-    def payload(self) -> str:
-        """Alias for payload_content for cleaner access."""
-        return self.payload_content
-
-
-# ─── Mock Sandbox Contracts ──────────────────────────────────────────────────
-
-class MockResponse(BaseModel):
-    """Response generated by the mock sandbox.
-    
-    Member 3's SandboxManager returns response_body as a JSON string
-    and data as parsed dict. Both are kept.
-    """
-    status_code: int = Field(default=200, description="HTTP-like status code")
-    response_body: str = Field(default="", description="The synthetic API response as JSON string")
-    data: Optional[Dict[str, Any]] = Field(default=None, description="Parsed response dict")
-    tool_name: str = Field(default="", description="The tool this response is for")
-    is_poisoned: bool = Field(default=False, description="Whether this response contains an attack payload")
-    run_id: str = Field(default="", description="Execution run identifier")
-
-
-class SandboxState(BaseModel):
-    """Sandbox state tree."""
-    state_tree: Dict[str, Any] = Field(default_factory=dict)
-
-
-class StateSnapshot(BaseModel):
-    """State at a point in time."""
-    timestamp: Optional[str] = None
-    state: Dict[str, Any] = Field(default_factory=dict)
-
+    tool_name: str
+    arguments: Dict[str, Any] = Field(default_factory=dict)
+    run_id: str = Field(default_factory=lambda: f"run_{uuid.uuid4().hex[:12]}")
+    context: Optional[Dict[str, Any]] = None
+    tool_schema: Optional[ToolSchema] = None
+    timestamp: Optional[datetime] = None
 
 class StateDiff(BaseModel):
-    """State difference computed by the sandbox."""
-    run_id: Optional[str] = Field(default=None, description="Execution run identifier")
+    run_id: Optional[str] = None
     before: Dict[str, Any] = Field(default_factory=dict)
     after: Dict[str, Any] = Field(default_factory=dict)
-    diff_keys: List[str] = Field(default_factory=list, description="Keys that changed")
+    diff_keys: List[str] = Field(default_factory=list)
     unauthorized_changes: List[str] = Field(default_factory=list)
-    has_changes: bool = Field(default=False, description="Whether any changes occurred")
+    has_changes: bool = False
     state_mutated: bool = False
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
@@ -198,24 +126,88 @@ class StateDiff(BaseModel):
         super().__init__(**data)
 
 
-# ─── Trace Engine Contracts ──────────────────────────────────────────────────
+
+class ExecutionResult(BaseModel):
+    run_id: str = Field(default_factory=lambda: f"run_{uuid.uuid4().hex[:12]}")
+    status: ScanStatus
+    error_message: Optional[str] = None
+    stdout: Optional[str] = None
+    stderr: Optional[str] = None
+    trajectory: Optional['TrajectoryData'] = None
+    state_before: Optional[Dict[str, Any]] = None
+    state_after: Optional[Dict[str, Any]] = None
+    state_diff: Optional[StateDiff] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+# ─── 4. Threat Model & Adversarial Engine ────────────────────────────────────
+
+class ASIVector(BaseModel):
+    tool_name: str
+    vector: str
+    capability: ToolCapability = ToolCapability.NEUTRAL
+    confidence: float = 1.0
+    description: str = ""
+
+    @property
+    def tool(self):
+        return self.tool_name
+
+
+class ThreatModel(BaseModel):
+    vulnerable_tools: List[ASIVector] = Field(default_factory=list)
+    risk_vectors: List[str] = Field(default_factory=list)
+    source_tools: List[str] = Field(default_factory=list)
+    sink_tools: List[str] = Field(default_factory=list)
+    has_source_sink_pair: bool = False
+    overall_risk: str = "LOW"
+
+class AttackPlan(BaseModel):
+    target_tool: str
+    vector: str
+    attack_strategy: str
+    injection_point: str = "tool_response"
+    success_condition: str = ""
+    attack_objective: str = ""
+    source_tool: Optional[str] = None
+    sink_tool: Optional[str] = None
+    contextual_constraints: Dict[str, Any] = Field(default_factory=dict)
+
+class AttackPayload(BaseModel):
+    payload_content: str
+    target_node: Optional[str] = None
+    target_tool: str = ""
+    attack_vector: str = "ASI01"
+    content_type: str = "indirect_prompt_injection"
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    @property
+    def payload(self):
+        return self.payload_content
+
+
+
+class MockResponse(BaseModel):
+    status_code: int = 200
+    response_body: str = ""
+    data: Optional[Dict[str, Any]] = None
+    tool_name: str = ""
+    is_poisoned: bool = False
+    run_id: str = Field(default_factory=lambda: f"run_{uuid.uuid4().hex[:12]}")
+
+# ─── 5. Trace & Evidence ─────────────────────────────────────────────────────
 
 class OpenInferenceSpan(BaseModel):
-    """A single OpenInference-compatible telemetry span."""
-    span_id: str = Field(default_factory=lambda: f"span_{uuid.uuid4().hex[:8]}", description="Unique span identifier")
-    parent_id: Optional[str] = Field(default=None, description="Parent span ID")
-    kind: SpanKind = Field(default=SpanKind.TOOL, description="Span kind (LLM, AGENT, TOOL, CHAIN)")
+    span_id: str = Field(default_factory=lambda: f"span_{uuid.uuid4().hex[:8]}")
+    parent_id: Optional[str] = None
     span_kind: Optional[str] = None
-    name: str = Field(default="", description="Span name (e.g., tool function name)")
-    attributes: Dict[str, Any] = Field(default_factory=dict, description="Span attributes")
-    status: str = Field(default="OK", description="Span status")
-    status_code: str = "OK"
-    status_message: Optional[str] = None
-    start_time: Optional[Union[datetime, str]] = Field(default=None)
-    end_time: Optional[Union[datetime, str]] = Field(default=None)
-    events: List[Dict[str, Any]] = Field(default_factory=list, description="Span events")
+    kind: SpanKind = SpanKind.TOOL
+    name: str = ""
+    attributes: Dict[str, Any] = Field(default_factory=dict)
+    status: str = "OK"
+    start_time: Optional[Union[datetime, str]] = None
+    end_time: Optional[Union[datetime, str]] = None
+    events: List[Dict[str, Any]] = Field(default_factory=list)
     
-    # Member 4 additions
     input_value: Optional[Any] = None
     output_value: Optional[Any] = None
     tool_name: Optional[str] = None
@@ -226,52 +218,18 @@ class OpenInferenceSpan(BaseModel):
     is_tainted: bool = False
     is_injection_source: bool = False
     is_unauthorized_sink: bool = False
-    threat_category: Optional[Union[OWASPThreatCategory, str]] = None
-
+    threat_category: Optional[str] = None
 
 class TrajectoryData(BaseModel):
-    """Complete execution trajectory."""
-    run_id: str = Field(default_factory=lambda: f"run_{uuid.uuid4().hex[:12]}", description="Unique run identifier")
+    run_id: str = Field(default_factory=lambda: f"run_{uuid.uuid4().hex[:12]}")
     agent_name: str = "TargetAgent"
     system_prompt: Optional[str] = None
     user_prompt: str = ""
-    spans: List[OpenInferenceSpan] = Field(default_factory=list, description="All spans in this trajectory")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Run metadata")
+    spans: List[OpenInferenceSpan] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    
-    # Legacy single-span fields (backward compatibility with Member 2's storage)
-    span_kind: Optional[str] = Field(default="", description="Legacy: span kind string")
-    attributes: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Legacy: span attributes")
-
-
-# ─── Member 4 Contracts ─────────────────────────────────────────────────────
-
-class PolicyRule(BaseModel):
-    rule_id: str = "RULE-001"
-    name: str = "RESTRICTED_SINK_RULE"
-    sink_tool: str = "execute_refund"
-    description: str = "Blocks unauthorized tool executions"
-    requires_authorization: bool = True
-    severity: EvaluationStatus = EvaluationStatus.CRITICAL_VETO
-    threat_category: Optional[Union[OWASPThreatCategory, str]] = None
-    condition_expression: Optional[str] = None
-
-
-class EvaluationResult(BaseModel):
-    evaluation_id: str = Field(default_factory=lambda: f"eval_{uuid.uuid4().hex[:8]}")
-    run_id: str = ""
-    status: Union[EvaluationStatus, str] = EvaluationStatus.PASS
-    violating_span_id: Optional[str] = None
-    violating_tool: Optional[str] = None
-    injection_source_span_id: Optional[str] = None
-    rule_name: Optional[str] = None
-    reason: str = ""
-    threat_category: Optional[Union[OWASPThreatCategory, str]] = None
-    state_diff: Optional[StateDiff] = None
-    latency_ms: float = 0.0
-    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    details: Dict[str, Any] = Field(default_factory=dict)
-
+    span_kind: Optional[str] = ""
+    attributes: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
 class DAGNodeData(BaseModel):
     label: str
@@ -287,29 +245,11 @@ class DAGNodeData(BaseModel):
     span_id: str
     details: Dict[str, Any] = Field(default_factory=dict)
 
-
-class DAGNode(BaseModel):
-    id: str
-    type: str = "custom"
-    data: Optional[Dict[str, Any]] = None
-    position: Dict[str, float] = Field(default_factory=lambda: {"x": 0.0, "y": 0.0})
-
-
-class DAGEdge(BaseModel):
-    id: str
-    source: str
-    target: str
-    animated: bool = False
-    style: Optional[Dict[str, Any]] = None
-    label: Optional[str] = None
-
-
 class EvidenceDAGNode(BaseModel):
     id: str
     type: str = "custom"
     data: DAGNodeData
     position: Dict[str, float]
-
 
 class EvidenceDAGEdge(BaseModel):
     id: str
@@ -319,30 +259,77 @@ class EvidenceDAGEdge(BaseModel):
     style: Optional[Dict[str, Any]] = None
     label: Optional[str] = None
 
-
-class EvidenceDAG(BaseModel):
-    run_id: str = ""
+class Evidence(BaseModel):
+    run_id: str = Field(default_factory=lambda: f"run_{uuid.uuid4().hex[:12]}")
+    evaluation: Optional["EvaluationResult"] = None
     agent_name: str = ""
-    nodes: List[Union[EvidenceDAGNode, Dict[str, Any]]] = Field(default_factory=list)
-    edges: List[Union[EvidenceDAGEdge, Dict[str, Any]]] = Field(default_factory=list)
-    evaluation: Optional[EvaluationResult] = None
+    nodes: List[EvidenceDAGNode] = Field(default_factory=list)
+    edges: List[EvidenceDAGEdge] = Field(default_factory=list)
     summary: str = ""
     veto_count: int = 0
     warning_count: int = 0
 
+class PolicyRule(BaseModel):
+    rule_id: str
+    name: str
+    sink_tool: str
+    description: str
+    requires_authorization: bool = True
+    severity: str = "CRITICAL_VETO"
+    threat_category: Optional[str] = None
+    condition_expression: Optional[str] = None
 
+# ─── 6. Evaluation Result & Scan Result ──────────────────────────────────────
+
+class EvaluationResult(BaseModel):
+    evaluation_id: str = Field(default_factory=lambda: f"eval_{uuid.uuid4().hex[:8]}")
+    run_id: str = Field(default_factory=lambda: f"run_{uuid.uuid4().hex[:12]}")
+    status: Optional[SecurityVerdict] = None
+    violating_span_id: Optional[str] = None
+    violating_tool: Optional[str] = None
+    injection_source_span_id: Optional[str] = None
+    rule_name: Optional[str] = None
+    reason: str = ""
+    threat_category: Optional[str] = None
+    state_diff: Optional[StateDiff] = None
+    latency_ms: float = 0.0
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    details: Dict[str, Any] = Field(default_factory=dict)
+
+class ScanResult(BaseModel):
+    run_id: str = Field(default_factory=lambda: f"run_{uuid.uuid4().hex[:12]}")
+    status: ScanStatus
+    verdict: Optional[SecurityVerdict] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    
+    project_manifest: Optional[ProjectManifest] = None
+    threat_model: Optional[ThreatModel] = None
+    attack_plan: Optional[AttackPlan] = None
+    attack_payload: Optional[AttackPayload] = None
+    trajectory: Optional[TrajectoryData] = None
+    state_diff: Optional[StateDiff] = None
+    evaluation: Optional["EvaluationResult"] = None
+    evidence: Optional[Evidence] = None
+
+    @model_validator(mode='after')
+    def validate_verdict(self):
+        if self.status != ScanStatus.COMPLETED and self.verdict is not None:
+            self.verdict = None
+        return self
+
+ExecutionResult.model_rebuild()
+
+# ─── 7. Regression Testing Contracts (Preserved) ─────────────────────────────
 class AttackVectorSpec(BaseModel):
     poisoned_source_tool: str
     payload: str
     target_sink_tool: str
     threat_category: str
 
-
 class ExpectedAdjudicationSpec(BaseModel):
-    verdict: EvaluationStatus
+    verdict: SecurityVerdict
     violation_rule: str
     state_invariant: Dict[str, Any] = Field(default_factory=dict)
-
 
 class RegressionTestSpec(BaseModel):
     version: str = "agentveto/v1"
@@ -351,48 +338,11 @@ class RegressionTestSpec(BaseModel):
     target_agent: str
     threat_category: str
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    span_kind: Optional[str] = ""
+    attributes: Optional[Dict[str, Any]] = Field(default_factory=dict)
     setup: Dict[str, Any] = Field(default_factory=dict)
     attack_vector: AttackVectorSpec
     expected_adjudication: ExpectedAdjudicationSpec
 
-
 class RegressionTest(RegressionTestSpec):
     pass
-
-
-class RunMetadata(BaseModel):
-    run_id: str
-    started_at: str
-    completed_at: Optional[str] = None
-    status: str
-
-# ─── Project Ingestion Contracts ──────────────────────────────────────────────
-
-class ToolCandidate(BaseModel):
-    name: str = Field(..., description="Name of the discovered tool")
-    source_file: str = Field(..., description="File where the tool is defined")
-    schema_hint: Optional[Dict[str, Any]] = Field(default=None, description="Statically inferred schema if available")
-    line_number: Optional[int] = Field(default=None, description="Line number of tool definition")
-
-class AgentCandidate(BaseModel):
-    name: str = Field(..., description="Name of the agent or primary file")
-    file: str = Field(..., description="File path")
-    entry_point: Optional[str] = Field(default=None, description="Inferred entry point")
-    integration: str = Field(..., description="Type of integration detected (e.g., 'python_interceptor')")
-    tools: List[ToolCandidate] = Field(default_factory=list, description="Tools associated with this agent")
-
-class ProjectManifest(BaseModel):
-    project_id: str = Field(default_factory=lambda: f"proj_{uuid.uuid4().hex[:8]}")
-    project_name: str = Field(default="Unknown Project")
-    source_type: str = Field(default="zip")
-    repository: Optional[str] = Field(default=None)
-    revision: Optional[str] = Field(default=None)
-    language: str = Field(default="python")
-    framework: Optional[str] = Field(default=None)
-    agentic: bool = Field(default=False)
-    supported: bool = Field(default=False)
-    integration_type: Optional[str] = Field(default=None)
-    agents: List[AgentCandidate] = Field(default_factory=list)
-    warnings: List[str] = Field(default_factory=list)
-    errors: List[str] = Field(default_factory=list)
-

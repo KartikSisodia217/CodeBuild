@@ -8,8 +8,8 @@ import os
 from agentveto.contracts.schemas import (
     TrajectoryData,
     StateDiff,
-    EvaluationStatus,
-    OWASPThreatCategory,
+    SecurityVerdict,
+
     OpenInferenceSpan,
     SpanKind,
 )
@@ -29,7 +29,7 @@ def test_zero_click_echoleak_triggers_critical_veto():
     trace = load_sample_trace("zero_click_echoleak.json")
     result = evaluate_trace(trace)
 
-    assert result.status == EvaluationStatus.CRITICAL_VETO
+    assert result.status == SecurityVerdict.VETO
     assert result.violating_tool == "execute_refund"
     assert result.injection_source_span_id == "span_tool_read_tickets_001"
     assert "Indirect Prompt Injection" in result.reason
@@ -41,7 +41,7 @@ def test_benign_support_flow_passes():
     trace = load_sample_trace("benign_support_flow.json")
     result = evaluate_trace(trace)
 
-    assert result.status == EvaluationStatus.PASS
+    assert result.status == SecurityVerdict.PASS
     assert result.violating_span_id is None
     assert result.violating_tool is None
     assert "All security invariants verified" in result.reason
@@ -52,8 +52,8 @@ def test_data_exfiltration_triggers_critical_veto():
     trace = load_sample_trace("data_exfiltration.json")
     result = evaluate_trace(trace)
 
-    assert result.status == EvaluationStatus.CRITICAL_VETO
-    assert result.threat_category == OWASPThreatCategory.MCP10_DATA_EXFILTRATION
+    assert result.status == SecurityVerdict.VETO
+    assert result.threat_category == "MCP10: Sensitive Data Exfiltration"
     assert "Data Exfiltration" in result.reason
 
 
@@ -62,8 +62,8 @@ def test_cascading_failure_triggers_warning():
     trace = load_sample_trace("cascading_failure.json")
     result = evaluate_trace(trace)
 
-    assert result.status == EvaluationStatus.WARN
-    assert result.threat_category == OWASPThreatCategory.ASI08_CASCADING_FAILURE
+    assert result.status == SecurityVerdict.VETO
+    assert result.threat_category == "ASI08: Cascading Tool Loops & Retry Storms"
     assert "Cascading Tool Loop" in result.reason
 
 
@@ -91,5 +91,5 @@ def test_state_diff_unauthorized_mutation_veto():
     )
 
     result = evaluate_trace(trace, state=state_diff)
-    assert result.status == EvaluationStatus.CRITICAL_VETO
+    assert result.status == SecurityVerdict.VETO
     assert "State Invariant Violation" in result.reason

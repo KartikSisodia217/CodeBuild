@@ -8,7 +8,7 @@ Verifies:
 
 import json
 import os
-from agentveto.schemas import TrajectoryData, EvaluationStatus
+from agentveto.schemas import TrajectoryData, SecurityVerdict
 from agentveto.evaluator.policy_engine import evaluate_trace
 from agentveto.registry.evidence_graph import EvidenceGraphBuilder
 

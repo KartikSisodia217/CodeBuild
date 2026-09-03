@@ -9,7 +9,7 @@ Verifies:
 import json
 import os
 import yaml
-from agentveto.schemas import TrajectoryData, EvaluationStatus, StateDiff
+from agentveto.schemas import TrajectoryData, SecurityVerdict, StateDiff
 from agentveto.evaluator.policy_engine import evaluate_trace
 from agentveto.registry.yaml_serializer import YamlRegressionSerializer
 
@@ -28,12 +28,12 @@ def test_yaml_export_and_parse():
     assert "version: agentveto/v1" in yaml_str
     assert "target_agent: CustomerSupportRefundAgent" in yaml_str
     assert "target_sink_tool: execute_refund" in yaml_str
-    assert "CRITICAL_VETO" in yaml_str
+    assert "VETO" in yaml_str
 
     # Test loading back
     spec = serializer.load_yaml_spec(yaml_str)
     assert spec.target_agent == "CustomerSupportRefundAgent"
-    assert spec.expected_adjudication.verdict == EvaluationStatus.CRITICAL_VETO
+    assert spec.expected_adjudication.verdict == SecurityVerdict.VETO
     assert spec.attack_vector.target_sink_tool == "execute_refund"
 
     # Test verification
