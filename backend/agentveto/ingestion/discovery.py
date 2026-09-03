@@ -27,17 +27,18 @@ def is_agentic_decorator(decorator: ast.expr) -> bool:
         return True
     return False
 
-def analyze_python_file(file_path: Path, relative_path: str) -> tuple[Optional[AgentCandidate], bool, Optional[str]]:
+def analyze_python_file(file_path: Path, relative_path: str) -> tuple[Optional[AgentCandidate], bool, Optional[str], List[str]]:
     try:
         content = file_path.read_text(encoding='utf-8')
         tree = ast.parse(content, filename=str(file_path))
     except Exception:
-        return None, False, None
+        return None, False, None, []
 
     tools = []
     has_agentveto_import = False
     is_agentic = False
     detected_framework = None
+    signals = []
     
     # Strict agentic module prefixes
     agentic_modules = ['smolagents', 'crewai', 'autogen', 'langgraph', 'pydantic_ai']
@@ -47,19 +48,24 @@ def analyze_python_file(file_path: Path, relative_path: str) -> tuple[Optional[A
         'langchain': ['agents', 'tools']
     }
 
+    langgraph_framework = False
     langgraph_constructs = set()
+    has_agent_class = False
+    has_tool_nodes = False
+
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom):
             if node.module and 'agentveto' in node.module:
                 has_agentveto_import = True
             if node.module:
                 if any(m in node.module for m in agentic_modules):
-                    # For langgraph, do not assume agentic just by import. Only crewai, autogen, smolagents, etc.
                     if 'langgraph' not in node.module:
                         is_agentic = True
                     for m in agentic_modules:
                         if m in node.module:
                             detected_framework = m
+                            if m == 'langgraph':
+                                langgraph_framework = True
                             if m != 'langgraph':
                                 is_agentic = True
                 for root_mod, sub_mods in agentic_submodules.items():
@@ -81,6 +87,8 @@ def analyze_python_file(file_path: Path, relative_path: str) -> tuple[Optional[A
                     for m in agentic_modules:
                         if m in alias.name:
                             detected_framework = m
+                            if m == 'langgraph':
+                                langgraph_framework = True
                             if m != 'langgraph':
                                 is_agentic = True
                 for root_mod, sub_mods in agentic_submodules.items():
@@ -94,9 +102,12 @@ def analyze_python_file(file_path: Path, relative_path: str) -> tuple[Optional[A
                 if is_intercept_decorator(decorator):
                     is_tool = True
                     is_agentic = True
+                    signals.append("agentveto.intercept decorator")
                     break
                 if is_agentic_decorator(decorator):
                     is_agentic = True
+                    is_tool = True
+                    signals.append(f"Tool decorator detected")
             
             if is_tool:
                 tools.append(ToolCandidate(
@@ -104,27 +115,59 @@ def analyze_python_file(file_path: Path, relative_path: str) -> tuple[Optional[A
                     source_file=relative_path,
                     line_number=node.lineno
                 ))
+        elif isinstance(node, ast.ClassDef):
+            class_name = node.name.lower()
+            is_agent_class = False
+            if 'agent' in class_name and 'state' not in class_name:
+                is_agent_class = True
+                signals.append(f"Agent class detected: {node.name}")
+            
+            for base in node.bases:
+                if isinstance(base, ast.Name):
+                    if 'Agent' in base.id and 'State' not in base.id:
+                        is_agent_class = True
+                        signals.append(f"Base agent subclass detected: {base.id}")
+            if is_agent_class:
+                has_agent_class = True
+                is_agentic = True
+                
         elif isinstance(node, ast.Call):
             callee = node.func.id if isinstance(node.func, ast.Name) else (node.func.attr if isinstance(node.func, ast.Attribute) else "")
-            if callee in {"StateGraph", "MessageGraph", "create_react_agent", "compile", "ToolNode"}:
+            
+            if callee in {"StateGraph", "MessageGraph", "compile"}:
                 langgraph_constructs.add(callee)
+                
+            if callee in {"create_react_agent", "ToolNode", "bind_tools"}:
+                has_tool_nodes = True
+                signals.append(f"Agentic construct: {callee}")
 
-    # A LangGraph import alone is not agent evidence.  A graph construction or
-    # compilation call is static evidence of an executable agent topology.
-    if detected_framework == "langgraph" and langgraph_constructs:
-        is_agentic = True
+    # A LangGraph import alone is not agent evidence. 
+    # We require actual agent components: create_react_agent, ToolNode, bind_tools, tools, or explicit Agent classes.
+    if langgraph_framework:
+        if has_tool_nodes or has_agent_class or tools:
+            is_agentic = True
+        
+        if langgraph_constructs:
+            signals.append(f"LangGraph structural nodes: {', '.join(langgraph_constructs)}")
+
+    if 'agents' in Path(relative_path).parts or 'agent' in Path(relative_path).parts:
+        if 'state' not in relative_path.lower():
+            is_agentic = True
+            signals.append(f"Agentic directory structure: {relative_path}")
+
+    signals = list(set(signals))
     
     agent_candidate = None
-    if tools or has_agentveto_import:
+    if is_agentic or tools or has_agentveto_import:
         agent_candidate = AgentCandidate(
             name=file_path.stem,
             file=relative_path,
-            integration="python_interceptor",
+            integration="langgraph" if langgraph_framework else "python_interceptor",
             tools=tools
         )
         is_agentic = True
         
-    return agent_candidate, is_agentic, detected_framework
+    return agent_candidate, is_agentic, detected_framework, signals
 
 def discover_project(
     extract_dir: str, 
@@ -144,22 +187,25 @@ def discover_project(
     agents = []
     project_is_agentic = False
     detected_project_framework = None
+    project_signals = []
     
     for root, dirs, files in os.walk(base_path):
         for file in files:
             if file.endswith('.py'):
                 full_path = Path(root) / file
                 relative_path = str(full_path.relative_to(base_path))
-                agent_candidate, is_file_agentic, framework = analyze_python_file(full_path, relative_path)
+                agent_candidate, is_file_agentic, framework, signals = analyze_python_file(full_path, relative_path)
                 if agent_candidate:
                     agents.append(agent_candidate)
                 if is_file_agentic:
                     project_is_agentic = True
                 if framework:
                     detected_project_framework = framework
+                project_signals.extend(signals)
     
     manifest.agentic = project_is_agentic
     manifest.agents = agents
+    manifest.agentic_signals = list(set(project_signals))
     if detected_project_framework:
         manifest.integration_type = detected_project_framework
 

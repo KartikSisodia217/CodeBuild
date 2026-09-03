@@ -148,7 +148,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full bg-[#090D14] text-[#E2E8F0] font-sans overflow-hidden select-none">
+    <div className="flex flex-col h-screen w-full bg-av-bg text-av-textPrimary font-sans overflow-hidden select-none">
       
       {/* Top Global Navigation Bar */}
       <Navbar
@@ -193,31 +193,31 @@ export default function App() {
 
       {/* VIEW 4: RUN DETAILS WORKSPACE (SCREENS 4 - 10) */}
       {currentView === 'details' && (
-        <div className="flex-1 flex flex-col min-w-0 bg-[#090D14] overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 bg-av-bg overflow-hidden">
           
           {/* Subheader with Target Agent, Verdict, and Primary Tabs */}
-          <header className="h-16 border-b border-[#1F293D] bg-[#0E131F]/90 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-20">
+          <header className="h-14 border-b border-av-border bg-av-surface px-8 flex items-center justify-between shrink-0 z-20">
             
             {/* Target Agent & Run ID */}
             <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2 text-xs font-mono text-slate-400">
+              <div className="flex items-center space-x-2 text-xs font-mono text-av-textSecondary">
                 <span 
                   onClick={() => setCurrentView('dashboard')}
-                  className="hover:text-indigo-400 cursor-pointer font-semibold"
+                  className="hover:text-av-textPrimary cursor-pointer font-medium transition-colors"
                 >
-                  Runs
+                  Scans
                 </span>
-                <ChevronRight className="w-3 h-3 text-slate-600" />
-                <span className="text-indigo-400 font-bold">
+                <ChevronRight className="w-3 h-3 text-av-textMuted" />
+                <span className="text-av-textPrimary font-semibold">
                   {scenarioData?.metadata?.run_number || '#AV-1042'}
                 </span>
               </div>
-              <div className="h-4 w-[1px] bg-[#1F293D]" />
+              <div className="h-4 w-[1px] bg-av-border" />
               <div className="flex items-center space-x-2">
-                <h2 className="text-sm font-bold text-white tracking-tight">
+                <h2 className="text-sm font-semibold text-av-textPrimary tracking-tight">
                   {scenarioData?.metadata?.agent_name || 'Target Agent'}
                 </h2>
-                <span className="text-xs text-slate-500 font-mono">
+                <span className="text-xs text-av-textMuted font-mono">
                   ({scenarioData?.metadata?.name || scenarioData?.scenario_id})
                 </span>
               </div>
@@ -225,12 +225,12 @@ export default function App() {
 
             {/* Tabs: Overview, Attack, Trace, Evidence, Regression */}
             <div className="flex items-center space-x-3">
-              <div className="flex bg-[#090D14] p-1 rounded-xl border border-[#1F293D] space-x-1">
+              <div className="flex bg-av-bg p-1 rounded-md border border-av-border space-x-1">
                 <button
                   onClick={() => setActiveTab('overview')}
                   className={clsx(
-                    "px-3 py-1.5 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-all font-sans",
-                    activeTab === 'overview' ? "bg-[#1F293D] text-white shadow-sm" : "text-slate-400 hover:text-white"
+                    "px-3 py-1 text-xs font-semibold rounded-md flex items-center space-x-1.5 transition-colors",
+                    activeTab === 'overview' ? "bg-av-surfaceElevated text-av-textPrimary shadow-sm border border-av-borderLight" : "text-av-textSecondary hover:text-av-textPrimary hover:bg-av-surfaceHover border border-transparent"
                   )}
                 >
                   <FileText className="w-3.5 h-3.5" />
@@ -240,30 +240,30 @@ export default function App() {
                 <button
                   onClick={() => setActiveTab('attack')}
                   className={clsx(
-                    "px-3 py-1.5 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-all font-sans",
-                    activeTab === 'attack' ? "bg-[#1F293D] text-white shadow-sm" : "text-slate-400 hover:text-white"
+                    "px-3 py-1 text-xs font-semibold rounded-md flex items-center space-x-1.5 transition-colors",
+                    activeTab === 'attack' ? "bg-av-surfaceElevated text-av-textPrimary shadow-sm border border-av-borderLight" : "text-av-textSecondary hover:text-av-textPrimary hover:bg-av-surfaceHover border border-transparent"
                   )}
                 >
-                  <Crosshair className="w-3.5 h-3.5 text-amber-400" />
+                  <Crosshair className="w-3.5 h-3.5" />
                   <span>Attack</span>
                 </button>
 
                 <button
                   onClick={() => setActiveTab('trace')}
                   className={clsx(
-                    "px-3 py-1.5 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-all font-sans",
-                    activeTab === 'trace' ? "bg-[#1F293D] text-white shadow-sm" : "text-slate-400 hover:text-white"
+                    "px-3 py-1 text-xs font-semibold rounded-md flex items-center space-x-1.5 transition-colors",
+                    activeTab === 'trace' ? "bg-av-surfaceElevated text-av-textPrimary shadow-sm border border-av-borderLight" : "text-av-textSecondary hover:text-av-textPrimary hover:bg-av-surfaceHover border border-transparent"
                   )}
                 >
                   <Clock className="w-3.5 h-3.5" />
-                  <span>Trace</span>
+                  <span>Timeline</span>
                 </button>
 
                 <button
                   onClick={() => setActiveTab('evidence')}
                   className={clsx(
-                    "px-3 py-1.5 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-all font-sans",
-                    activeTab === 'evidence' ? "bg-[#1F293D] text-white shadow-sm" : "text-slate-400 hover:text-white"
+                    "px-3 py-1 text-xs font-semibold rounded-md flex items-center space-x-1.5 transition-colors",
+                    activeTab === 'evidence' ? "bg-av-surfaceElevated text-av-textPrimary shadow-sm border border-av-borderLight" : "text-av-textSecondary hover:text-av-textPrimary hover:bg-av-surfaceHover border border-transparent"
                   )}
                 >
                   <Layers className="w-3.5 h-3.5" />
@@ -273,8 +273,8 @@ export default function App() {
                 <button
                   onClick={() => setActiveTab('regression')}
                   className={clsx(
-                    "px-3 py-1.5 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-all font-sans",
-                    activeTab === 'regression' ? "bg-[#1F293D] text-white shadow-sm" : "text-slate-400 hover:text-white"
+                    "px-3 py-1 text-xs font-semibold rounded-md flex items-center space-x-1.5 transition-colors",
+                    activeTab === 'regression' ? "bg-av-surfaceElevated text-av-textPrimary shadow-sm border border-av-borderLight" : "text-av-textSecondary hover:text-av-textPrimary hover:bg-av-surfaceHover border border-transparent"
                   )}
                 >
                   <FileCode2 className="w-3.5 h-3.5" />
@@ -286,9 +286,9 @@ export default function App() {
               <button
                 onClick={handleReEvaluate}
                 disabled={evaluating}
-                className="px-3 py-1.5 rounded-xl bg-[#090D14] hover:bg-[#151B28] text-xs font-bold text-slate-300 border border-[#1F293D] flex items-center space-x-1.5 transition-colors font-sans"
+                className="btn-secondary py-1 text-xs space-x-1.5"
               >
-                <RefreshCw className={clsx("w-3.5 h-3.5 text-indigo-400", evaluating && "animate-spin")} />
+                <RefreshCw className={clsx("w-3.5 h-3.5", evaluating && "animate-spin")} />
                 <span>Re-Evaluate</span>
               </button>
             </div>
@@ -300,9 +300,9 @@ export default function App() {
             <div className="max-w-6xl mx-auto">
               
               {loading && !scenarioData ? (
-                <div className="p-12 text-center text-slate-500 font-mono text-xs flex items-center justify-center space-x-2">
-                  <RefreshCw className="w-4 h-4 animate-spin text-indigo-400" />
-                  <span>Loading adjudication telemetry...</span>
+                <div className="p-12 text-center text-av-textMuted font-mono text-sm flex items-center justify-center space-x-2">
+                  <RefreshCw className="w-4 h-4 animate-spin text-av-textSecondary" />
+                  <span>Loading scan data...</span>
                 </div>
               ) : (
                 <>

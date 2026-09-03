@@ -15,71 +15,92 @@ def create_zip(name, files):
             zf.writestr(filename, content)
     return zip_path
 
-@patch('agentveto.subprocess_runner.subprocess.run')
-def test_legal_ai_is_not_agentic(mock_run):
-    # Legal.ai uses langgraph for state, but has no agents or config
-    files = {
-        "app.py": "import langgraph\nprint('just a rag app')"
-    }
-    zip_path = create_zip("Legal.ai.zip", files)
-    
-    with open(zip_path, "rb") as f:
-        res = client.post("/api/projects/analyze", files={"file": ("Legal.ai.zip", f, "application/zip")})
-    manifest = res.json()
-    assert manifest["agentic"] is False
-    
-    scan_res = client.post("/api/scan", json={"project_manifest": manifest})
-    assert scan_res.json()["status"] == "not_agentic"
-    assert scan_res.json()["scenario_details"]["evaluation"]["status"] == "NOT_AGENTIC"
-    
-    mock_run.assert_not_called()
-
-@patch('agentveto.subprocess_runner.subprocess.run')
-def test_agentic_langgraph_no_entrypoint(mock_run):
-    # Agentic codebase but no config yaml
-    files = {
-        "agent.py": "from langchain import agents\nimport langgraph\n"
-    }
-    zip_path = create_zip("NoEntrypoint.zip", files)
-    
-    with open(zip_path, "rb") as f:
-        res = client.post("/api/projects/analyze", files={"file": ("NoEntrypoint.zip", f, "application/zip")})
-    manifest = res.json()
-    assert manifest["agentic"] is True
-    assert manifest["integration_type"] == "langgraph"
-    assert manifest["entrypoint"] is None
-    
-    scan_res = client.post("/api/scan", json={"project_manifest": manifest})
-    assert scan_res.json()["status"] == "unsafe_to_execute"
-    assert scan_res.json()["scenario_details"]["evaluation"]["status"] == "UNSUPPORTED_ENTRYPOINT"
-    
-    mock_run.assert_not_called()
-
-@patch('agentveto.subprocess_runner.subprocess.run')
-def test_real_langgraph_fixture(mock_run):
-    # Config is present, so it has an entrypoint and is agentic
+@patch('agentveto.core.execution_runtime.run_external_project')
+def test_framework_only_project_a(mock_run):
+    """A. Framework-only project & E. Framework-only cannot become READY & F. NOT_AGENTIC cannot reach runtime"""
     files = {
         "app.py": "import langgraph\n",
         "agentveto.yaml": "runtime:\n  adapter: langgraph\n  entrypoint: app:graph"
     }
-    zip_path = create_zip("RealAgent.zip", files)
+    zip_path = create_zip("FrameworkOnly.zip", files)
     
     with open(zip_path, "rb") as f:
-        res = client.post("/api/projects/analyze", files={"file": ("RealAgent.zip", f, "application/zip")})
+        res = client.post("/api/projects/analyze", files={"file": ("FrameworkOnly.zip", f, "application/zip")})
     manifest = res.json()
+    
+    assert manifest["agentic"] is False
+    assert manifest["integration_type"] == "langgraph"
+    
+    scan_res = client.post("/api/scan", json={"project_manifest": manifest})
+    scan_data = scan_res.json()
+    
+    assert scan_data["status"] == "NOT_AGENTIC"
+    mock_run.assert_not_called()
+
+@patch('agentveto.core.execution_runtime.run_external_project')
+def test_genuine_langgraph_agent_b(mock_run):
+    """B. Genuine LangGraph agent"""
+    files = {
+        "app.py": "from langgraph.prebuilt import create_react_agent\nimport langgraph\nagent = create_react_agent()\n",
+        "agentveto.yaml": "runtime:\n  adapter: langgraph\n  entrypoint: app:agent"
+    }
+    zip_path = create_zip("GenuineAgent.zip", files)
+    
+    with open(zip_path, "rb") as f:
+        res = client.post("/api/projects/analyze", files={"file": ("GenuineAgent.zip", f, "application/zip")})
+    manifest = res.json()
+    
     assert manifest["agentic"] is True
     assert manifest["integration_type"] == "langgraph"
-    assert manifest["entrypoint"] == "app:graph"
+
+@patch('agentveto.core.execution_runtime.run_external_project')
+def test_ledgerai_source_patterns_c(mock_run):
+    """C. LedgerAI source patterns"""
+    files = {
+        "agent.py": "from langgraph.graph import StateGraph\nclass PartnerAgent(BaseAgent):\n  pass\n",
+        "agentveto.yaml": "runtime:\n  adapter: langgraph\n  entrypoint: agent:graph"
+    }
+    zip_path = create_zip("LedgerAIPattern.zip", files)
     
-    # We mock the worker subprocess
-    import json
-    mock_run.return_value.returncode = 0
-    # Simulate worker writing out.json
-    mock_run.return_value.returncode = 1
-    mock_run.return_value.stderr = "worker failed"
+    with open(zip_path, "rb") as f:
+        res = client.post("/api/projects/analyze", files={"file": ("LedgerAIPattern.zip", f, "application/zip")})
+    manifest = res.json()
     
-    # We will just expect it to call subprocess and fail to find out.json (EXECUTION_FAILED)
-    # But that's enough to prove the runtime WAS called.
+    assert manifest["agentic"] is True
+    assert manifest["integration_type"] == "langgraph"
+
+@patch('agentveto.core.execution_runtime.run_external_project')
+def test_legalai_representative_source_d(mock_run):
+    """D. Legal.ai representative source"""
+    files = {
+        "rag.py": "from langgraph.graph import StateGraph, START, END\nclass AgentState(TypedDict):\n  messages: list\n"
+    }
+    zip_path = create_zip("LegalAIPattern.zip", files)
+    
+    with open(zip_path, "rb") as f:
+        res = client.post("/api/projects/analyze", files={"file": ("LegalAIPattern.zip", f, "application/zip")})
+    manifest = res.json()
+    
+    assert manifest["agentic"] is False
+
+@patch('agentveto.core.execution_runtime.run_external_project')
+def test_unsupported_agent_g(mock_run):
+    """G. Unsupported agent"""
+    files = {
+        "app.py": "import autogen\nagent = autogen.ConversableAgent()\n"
+    }
+    zip_path = create_zip("UnsupportedAgent.zip", files)
+    
+    with open(zip_path, "rb") as f:
+        res = client.post("/api/projects/analyze", files={"file": ("UnsupportedAgent.zip", f, "application/zip")})
+    manifest = res.json()
+    
+    assert manifest["agentic"] is True
+    assert manifest["integration_type"] == "autogen"
+    assert manifest["supported"] is False
+    
     scan_res = client.post("/api/scan", json={"project_manifest": manifest})
-    assert mock_run.called
-    assert scan_res.json()["scenario_details"]["evaluation"]["status"] == "EXECUTION_FAILED"
+    scan_data = scan_res.json()
+    
+    assert scan_data["status"] == "UNSUPPORTED"
+    mock_run.assert_not_called()
