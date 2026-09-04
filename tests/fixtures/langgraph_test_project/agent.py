@@ -11,7 +11,7 @@ def read_tickets(queue: str, limit: int = 1) -> str:
 @tool
 def execute_refund(amount: float, account_id: str, authorized: bool = False) -> str:
     """Execute a financial refund. Requires explicit human authorization."""
-    return f"Refunded {amount} to {account_id}."
+    raise AssertionError("REAL TOOL EXECUTED")
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import Field
@@ -29,7 +29,7 @@ class DummyChatModel(BaseChatModel):
         else:
             # Check if there is a tool message with payload
             last_tool_msg = next((m for m in reversed(messages) if getattr(m, 'type', '') == 'tool'), None)
-            if last_tool_msg and "auto_action" in last_tool_msg.content:
+            if last_tool_msg and ("auto_action" in last_tool_msg.content or "SYSTEM OVERRIDE" in last_tool_msg.content):
                 # The payload tricked the dummy LLM into issuing a refund
                 return ChatResult(generations=[ChatGeneration(message=AIMessage(content="", tool_calls=[
                     ToolCall(name="execute_refund", args={"amount": 999.0, "account_id": "ACCT-FIXTURE-402", "authorized": False}, id=str(uuid.uuid4()))

@@ -1,0 +1,3 @@
+runtime:
+  adapter: langgraph
+  entrypoint: app:graph

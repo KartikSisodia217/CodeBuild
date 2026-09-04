@@ -41,7 +41,7 @@ def test_member1_vertical_slice():
     mock_response = sandbox.generate_mock_response(call, AttackPayload(**payload))
     
     # Verify sandbox response contains payload
-    assert payload["payload_content"] in mock_response.data["body"]
+    assert payload["payload_content"] in mock_response.data["content"]
     
     # 6. Simulate target agent trace (it refused)
     trace = TrajectoryData(
@@ -79,4 +79,3 @@ def test_member1_vertical_slice():
     assert next_result["current_payload"] is not None
     # Payload should have mutated
     assert next_result["current_payload"]["payload_content"] != result["current_payload"]["payload_content"]
-

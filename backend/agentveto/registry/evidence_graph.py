@@ -13,8 +13,8 @@ from typing import Optional, List, Dict, Any
 from agentveto.contracts.schemas import (
     TrajectoryData,
     EvaluationResult,
-    EvaluationStatus,
-    EvidenceDAG,
+    
+    Evidence,
     EvidenceDAGNode,
     EvidenceDAGEdge,
     DAGNodeData,
@@ -50,7 +50,7 @@ class EvidenceGraphBuilder:
         self,
         trace: TrajectoryData,
         eval_result: Optional[EvaluationResult] = None,
-    ) -> EvidenceDAG:
+    ) -> Evidence:
         """
         Converts OpenInference trajectory spans into a React Flow compatible Evidence DAG.
 
@@ -91,8 +91,8 @@ class EvidenceGraphBuilder:
         y_center = 180.0
 
         taint_active = False
-        veto_count = 1 if eval_result.status == EvaluationStatus.CRITICAL_VETO else 0
-        warning_count = 1 if eval_result.status == EvaluationStatus.WARN else 0
+        veto_count = 1 if eval_result.status == "VETO" else 0
+        warning_count = 1 if eval_result.status == "VETO" else 0
 
         for i, span in enumerate(trace.spans):
             node_id = f"node_{span.span_id}"
@@ -128,7 +128,7 @@ class EvidenceGraphBuilder:
             status_text = (
                 "VETOED"
                 if is_sink
-                else ("TAINTED / INJECTION" if is_injection else span.status_code)
+                else ("TAINTED / INJECTION" if is_injection else span.status)
             )
 
             threat_cat_str = None
@@ -228,7 +228,7 @@ class EvidenceGraphBuilder:
             f"Reason: {eval_result.reason}"
         )
 
-        return EvidenceDAG(
+        return Evidence(
             run_id=trace.run_id,
             agent_name=trace.agent_name,
             nodes=nodes,
@@ -245,6 +245,6 @@ _dag_builder = EvidenceGraphBuilder()
 
 def generate_dag(
     trace: TrajectoryData, eval_result: Optional[EvaluationResult] = None
-) -> EvidenceDAG:
+) -> Evidence:
     """Convenience function matching Member 4 interface spec."""
     return _dag_builder.generate_dag(trace, eval_result)

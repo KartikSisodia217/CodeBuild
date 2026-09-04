@@ -49,12 +49,14 @@ EXTERNAL_KEYWORDS: List[str] = [
 import re
 
 def _text_contains_keyword(text: str, keywords: List[str]) -> bool:
-    """Check if any keyword appears as a whole word in the text."""
-    text_lower = text.lower()
-    for kw in keywords:
-        if re.search(r'\b' + re.escape(kw) + r'\b', text_lower):
-            return True
-    return False
+    """Match semantic tokens from tool names and descriptions.
+
+    Names commonly use snake_case and descriptions use inflections, so a
+    regex word-boundary check is insufficient (``read_records`` and ``reads``
+    should both expose the same capability).
+    """
+    tokens = re.findall(r"[a-z]+", re.sub(r"([a-z])([A-Z])", r"\1 \2", text).lower())
+    return any(token == keyword or token.startswith(keyword) for token in tokens for keyword in keywords)
 
 
 class ThreatModeler:
@@ -94,7 +96,7 @@ class ThreatModeler:
             # Rule 1: All Sinks are flagged with MCP10 (Data Exfiltration target)
             if capability in (ToolCapability.SINK, ToolCapability.DUAL) or is_external:
                 vectors.append(ASIVector(
-                    tool=schema.name,
+                    tool_name=schema.name,
                     vector="MCP10",
                     capability=capability,
                     confidence=0.9 if is_external else 0.8,
@@ -104,7 +106,7 @@ class ThreatModeler:
             # Rule 2: If we have a source-sink pair, ALL sinks are ALSO flagged with ASI01
             if has_pair and capability in (ToolCapability.SINK, ToolCapability.DUAL):
                 vectors.append(ASIVector(
-                    tool=schema.name,
+                    tool_name=schema.name,
                     vector="ASI01",
                     capability=capability,
                     confidence=0.95 if is_admin else 0.9,

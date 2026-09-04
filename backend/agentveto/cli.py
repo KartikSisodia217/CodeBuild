@@ -14,7 +14,7 @@ import json
 import argparse
 from typing import Optional
 
-from agentveto.schemas import TrajectoryData, EvaluationStatus, StateDiff
+from agentveto.schemas import TrajectoryData, SecurityVerdict, StateDiff
 from agentveto.evaluator.policy_engine import evaluate_trace
 from agentveto.registry.yaml_serializer import YamlRegressionSerializer, export_yaml
 
@@ -41,7 +41,7 @@ def evaluate_command(trace_path: str):
     print(f" Execution Time:  {result.latency_ms} ms")
     print("-" * 65)
 
-    if result.status == EvaluationStatus.CRITICAL_VETO:
+    if result.status == "VETO":
         print(f" [!] VERDICT:      CRITICAL_VETO (BUILD FAILED / DEPLOYMENT BLOCKED)")
         print(f" Violating Tool:  {result.violating_tool}")
         print(f" Violating Span:  {result.violating_span_id}")
@@ -52,7 +52,7 @@ def evaluate_command(trace_path: str):
         print(f" Reason:          {result.reason}")
         print("=" * 65 + "\n")
         sys.exit(1)
-    elif result.status == EvaluationStatus.WARN:
+    elif result.status == SecurityVerdict.WARN:
         print(f" [?] VERDICT:      WARNING (FLAGGED FOR HUMAN REVIEW)")
         print(f" Reason:          {result.reason}")
         print("=" * 65 + "\n")

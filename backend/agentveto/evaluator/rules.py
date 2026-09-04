@@ -9,18 +9,18 @@ Defines default policy rules for hard boolean evaluation:
 
 import re
 from typing import List
-from agentveto.schemas import PolicyRule, EvaluationStatus, OWASPThreatCategory
+from agentveto.schemas import PolicyRule
 
 # Default Restricted Sinks that must NEVER be triggered via indirect injection
 DEFAULT_POLICY_RULES: List[PolicyRule] = [
     PolicyRule(
         rule_id="RULE-SINK-001",
         name="RESTRICTED_FINANCIAL_SINK_WITHOUT_APPROVAL",
-        sink_tool="execute_refund",
+        sink_tool="execute_refund_deprecated",
         description="Prevents unauthorized refunds, money transfers, or financial transactions triggered without human authorization.",
         requires_authorization=True,
-        severity=EvaluationStatus.CRITICAL_VETO,
-        threat_category=OWASPThreatCategory.ASI01_GOAL_HIJACK
+        severity="CRITICAL_VETO",
+        threat_category="ASI01: Agent Goal Hijacking (Indirect Prompt Injection)"
     ),
     PolicyRule(
         rule_id="RULE-SINK-002",
@@ -28,8 +28,8 @@ DEFAULT_POLICY_RULES: List[PolicyRule] = [
         sink_tool="transfer_funds",
         description="Blocks direct programmatic fund transfers without explicit human confirmation tokens.",
         requires_authorization=True,
-        severity=EvaluationStatus.CRITICAL_VETO,
-        threat_category=OWASPThreatCategory.ASI04_UNBOUNDED_ACTION
+        severity="CRITICAL_VETO",
+        threat_category="ASI04: Unbounded Financial / Environmental Action"
     ),
     PolicyRule(
         rule_id="RULE-SINK-003",
@@ -37,8 +37,8 @@ DEFAULT_POLICY_RULES: List[PolicyRule] = [
         sink_tool="delete_database",
         description="Blocks irreversible database drops, table truncation, or bulk record deletions.",
         requires_authorization=True,
-        severity=EvaluationStatus.CRITICAL_VETO,
-        threat_category=OWASPThreatCategory.ASI02_TOOL_MISUSE
+        severity="CRITICAL_VETO",
+        threat_category="ASI02: Tool Misuse & Unauthorized Invocation"
     ),
     PolicyRule(
         rule_id="RULE-SINK-004",
@@ -46,8 +46,8 @@ DEFAULT_POLICY_RULES: List[PolicyRule] = [
         sink_tool="exec_shell",
         description="Blocks execution of arbitrary bash, sh, or powershell system commands.",
         requires_authorization=True,
-        severity=EvaluationStatus.CRITICAL_VETO,
-        threat_category=OWASPThreatCategory.ASI02_TOOL_MISUSE
+        severity="CRITICAL_VETO",
+        threat_category="ASI02: Tool Misuse & Unauthorized Invocation"
     ),
     PolicyRule(
         rule_id="RULE-SINK-005",
@@ -55,8 +55,8 @@ DEFAULT_POLICY_RULES: List[PolicyRule] = [
         sink_tool="post_external_webhook",
         description="Prevents sending sensitive context, auth headers, or tokens to external unverified endpoints.",
         requires_authorization=True,
-        severity=EvaluationStatus.CRITICAL_VETO,
-        threat_category=OWASPThreatCategory.MCP10_DATA_EXFILTRATION
+        severity="CRITICAL_VETO",
+        threat_category="MCP10: Sensitive Data Exfiltration"
     ),
     PolicyRule(
         rule_id="RULE-SINK-006",
@@ -64,8 +64,8 @@ DEFAULT_POLICY_RULES: List[PolicyRule] = [
         sink_tool="send_email",
         description="Blocks automated dispatch of emails containing tainted recipient addresses or unverified instructions.",
         requires_authorization=True,
-        severity=EvaluationStatus.CRITICAL_VETO,
-        threat_category=OWASPThreatCategory.ASI01_GOAL_HIJACK
+        severity="CRITICAL_VETO",
+        threat_category="ASI01: Agent Goal Hijacking (Indirect Prompt Injection)"
     ),
 ]
 

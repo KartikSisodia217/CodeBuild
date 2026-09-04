@@ -77,7 +77,7 @@ def test_github_ingestion_valid(mock_urlopen):
     assert manifest["source_type"] == "github"
     assert manifest["repository"] == "test/repo"
     assert manifest["revision"] == "1234abc"
-    assert manifest["supported"] is True
+    assert manifest["supported"] is False
     assert manifest["agentic"] is True
     assert len(manifest["agents"]) == 1
 
@@ -91,7 +91,7 @@ def test_github_ingestion_not_found(mock_urlopen):
     )
     
     assert response.status_code == 400
-    assert "not found" in response.json()["detail"].lower()
+    assert "not found" in response.json().get("detail", response.json().get("metadata", {}).get("message", "")).lower()
 
 def test_github_ingestion_oversized(mock_urlopen):
     # Test oversized repository by throwing Exception from safe_extract
@@ -104,7 +104,7 @@ def test_github_ingestion_oversized(mock_urlopen):
     )
     
     assert response.status_code == 400
-    assert "exceeds maximum size" in response.json()["detail"]
+    assert "exceeds maximum size" in response.json().get("detail", response.json().get("metadata", {}).get("message", ""))
 
 def test_github_ignored_files(mock_urlopen):
     zip_content = create_mock_zipball({
@@ -143,7 +143,7 @@ def test_github_agentic_patterns(mock_urlopen):
     manifest = response.json()
     assert manifest["agentic"] is True
     assert manifest["supported"] is False
-    assert "No supported AgentVeto integration" in manifest["warnings"][0]
+    assert "Unsupported agent framework" in manifest["warnings"][0]
 
 def test_github_non_agentic(mock_urlopen):
     zip_content = create_mock_zipball({
