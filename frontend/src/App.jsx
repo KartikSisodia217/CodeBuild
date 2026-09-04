@@ -22,6 +22,7 @@ import ExecutionTrace from './components/ExecutionTrace';
 import EvidenceView from './components/EvidenceView';
 import RegressionView from './components/RegressionView';
 import RunHistory from './components/RunHistory';
+import { API_BASE_URL } from './config';
 
 export default function App() {
   const [currentView, setCurrentView] = useState('landing'); // 'landing', 'dashboard', 'details', 'history', 'progress'
@@ -60,7 +61,7 @@ export default function App() {
   const fetchScenarios = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('http://127.0.0.1:8000/api/scenarios');
+      const res = await axios.get(`${API_BASE_URL}/api/scenarios`);
       setScenarios(res.data);
       if (res.data.length > 0 && !selectedScenarioId) {
         setSelectedScenarioId(res.data[0].id);
@@ -74,7 +75,7 @@ export default function App() {
 
   const fetchMetrics = async () => {
     try {
-      const res = await axios.get('http://127.0.0.1:8000/api/metrics');
+      const res = await axios.get(`${API_BASE_URL}/api/metrics`);
       if (res.data) setMetrics(res.data);
     } catch (err) {
       console.warn("Metrics endpoint unreachable:", err);
@@ -85,8 +86,8 @@ export default function App() {
     try {
       setLoading(true);
       const url = id.startsWith('run_') 
-        ? `http://127.0.0.1:8000/api/scan/${id}`
-        : `http://127.0.0.1:8000/api/scenarios/${id}`;
+        ? `${API_BASE_URL}/api/scan/${id}`
+        : `${API_BASE_URL}/api/scenarios/${id}`;
       const res = await axios.get(url);
       setScenarioData(res.data);
     } catch (err) {
@@ -107,7 +108,7 @@ export default function App() {
     setScanError(null);
     setLoading(true);
     try {
-      const res = await axios.post('http://127.0.0.1:8000/api/scan', config);
+      const res = await axios.post(`${API_BASE_URL}/api/scan`, config);
       setCurrentScanConfig({ ...config, scanResult: res.data });
       setIsNewScanOpen(false);
       setCurrentView('progress');
@@ -140,7 +141,7 @@ export default function App() {
     setEvaluating(true);
     try {
       if (selectedScenarioId.startsWith('run_')) {
-        const res = await axios.post(`http://127.0.0.1:8000/api/scan/${selectedScenarioId}/re-evaluate`);
+        const res = await axios.post(`${API_BASE_URL}/api/scan/${selectedScenarioId}/re-evaluate`);
         setScenarioData(res.data);
       } else {
         await fetchScenarioDetails(selectedScenarioId);
@@ -154,13 +155,14 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full bg-av-bg text-av-textPrimary font-sans overflow-hidden select-none">
+    <div className="flex flex-col h-screen w-full bg-[#070707] text-[#ffffff] font-sans overflow-hidden select-none">
       
       {/* Top Global Navigation Bar */}
       <Navbar
         currentView={currentView}
         setCurrentView={setCurrentView}
         onOpenNewScan={() => setIsNewScanOpen(true)}
+        activeRunId={selectedScenarioId}
       />
 
       {/* VIEW 0: LANDING PAGE (INTUITIVE, HUMAN EXPLANATION) */}
@@ -177,6 +179,7 @@ export default function App() {
           runs={scenarios}
           metrics={metrics}
           onSelectRun={handleSelectRun}
+          onOpenNewScan={() => setIsNewScanOpen(true)}
         />
       )}
 
@@ -205,31 +208,31 @@ export default function App() {
 
       {/* VIEW 4: RUN DETAILS WORKSPACE (SCREENS 4 - 10) */}
       {currentView === 'details' && (
-        <div className="flex-1 flex flex-col min-w-0 bg-av-bg overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 bg-[#070707] overflow-hidden">
           
           {/* Subheader with Target Agent, Verdict, and Primary Tabs */}
-          <header className="h-14 border-b border-av-border bg-av-surface px-8 flex items-center justify-between shrink-0 z-20">
+          <header className="h-14 border-b border-[#22222a] bg-[#0d0e12] px-8 flex items-center justify-between shrink-0 z-20">
             
             {/* Target Agent & Run Details Breadcrumb */}
             <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2 text-xs font-mono text-av-textSecondary">
+              <div className="flex items-center space-x-2 text-xs font-mono text-[#a2a4a9]">
                 <span 
                   onClick={() => setCurrentView('dashboard')}
-                  className="hover:text-av-textPrimary cursor-pointer font-medium transition-colors"
+                  className="hover:text-white cursor-pointer font-medium transition-colors"
                 >
                   Scans
                 </span>
-                <ChevronRight className="w-3 h-3 text-av-textMuted" />
-                <span className="text-av-textPrimary font-semibold">
+                <ChevronRight className="w-3 h-3 text-[#60606c]" />
+                <span className="text-white font-medium">
                   {scenarioData?.metadata?.run_number || '#AV-1042'}
                 </span>
               </div>
-              <div className="h-4 w-[1px] bg-av-border" />
+              <div className="h-4 w-[1px] bg-[#22222a]" />
               <div className="flex items-center space-x-2">
-                <h2 className="text-sm font-semibold text-av-textPrimary tracking-tight">
+                <h2 className="text-sm font-medium text-white tracking-tight">
                   {scenarioData?.metadata?.agent_name || 'Target Agent'}
                 </h2>
-                <span className="text-xs text-av-textMuted font-mono">
+                <span className="text-xs text-[#aeaeb7] font-mono">
                   ({scenarioData?.metadata?.name || scenarioData?.scenario_id})
                 </span>
               </div>
@@ -237,12 +240,14 @@ export default function App() {
 
             {/* Tabs: Overview, Attack, Trace, Evidence, Regression (Hardware Pill Style) */}
             <div className="flex items-center space-x-3">
-              <div className="flex bg-av-bg p-1 rounded-md border border-av-border space-x-1">
+              <div className="flex bg-[#0d0e12] p-1 rounded-full border border-[#22222a] space-x-1">
                 <button
                   onClick={() => setActiveTab('overview')}
                   className={clsx(
-                    "px-3 py-1 text-xs font-semibold rounded-md flex items-center space-x-1.5 transition-colors",
-                    activeTab === 'overview' ? "bg-av-surfaceElevated text-av-textPrimary shadow-sm border border-av-borderLight" : "text-av-textSecondary hover:text-av-textPrimary hover:bg-av-surfaceHover border border-transparent"
+                    "px-4 py-1.5 text-xs font-medium rounded-full flex items-center space-x-1.5 transition-all cursor-pointer",
+                    activeTab === 'overview' 
+                      ? "bg-white text-[#070707] shadow-sm" 
+                      : "text-[#a2a4a9] hover:text-white"
                   )}
                 >
                   <FileText className="w-3.5 h-3.5" />
@@ -252,8 +257,10 @@ export default function App() {
                 <button
                   onClick={() => setActiveTab('attack')}
                   className={clsx(
-                    "px-3 py-1 text-xs font-semibold rounded-md flex items-center space-x-1.5 transition-colors",
-                    activeTab === 'attack' ? "bg-av-surfaceElevated text-av-textPrimary shadow-sm border border-av-borderLight" : "text-av-textSecondary hover:text-av-textPrimary hover:bg-av-surfaceHover border border-transparent"
+                    "px-4 py-1.5 text-xs font-medium rounded-full flex items-center space-x-1.5 transition-all cursor-pointer",
+                    activeTab === 'attack' 
+                      ? "bg-white text-[#070707] shadow-sm" 
+                      : "text-[#a2a4a9] hover:text-white"
                   )}
                 >
                   <Crosshair className="w-3.5 h-3.5" />
@@ -263,19 +270,23 @@ export default function App() {
                 <button
                   onClick={() => setActiveTab('trace')}
                   className={clsx(
-                    "px-3 py-1 text-xs font-semibold rounded-md flex items-center space-x-1.5 transition-colors",
-                    activeTab === 'trace' ? "bg-av-surfaceElevated text-av-textPrimary shadow-sm border border-av-borderLight" : "text-av-textSecondary hover:text-av-textPrimary hover:bg-av-surfaceHover border border-transparent"
+                    "px-4 py-1.5 text-xs font-medium rounded-full flex items-center space-x-1.5 transition-all cursor-pointer",
+                    activeTab === 'trace' 
+                      ? "bg-white text-[#070707] shadow-sm" 
+                      : "text-[#a2a4a9] hover:text-white"
                   )}
                 >
                   <Clock className="w-3.5 h-3.5" />
-                  <span>Timeline</span>
+                  <span>Trace</span>
                 </button>
 
                 <button
                   onClick={() => setActiveTab('evidence')}
                   className={clsx(
-                    "px-3 py-1 text-xs font-semibold rounded-md flex items-center space-x-1.5 transition-colors",
-                    activeTab === 'evidence' ? "bg-av-surfaceElevated text-av-textPrimary shadow-sm border border-av-borderLight" : "text-av-textSecondary hover:text-av-textPrimary hover:bg-av-surfaceHover border border-transparent"
+                    "px-4 py-1.5 text-xs font-medium rounded-full flex items-center space-x-1.5 transition-all cursor-pointer",
+                    activeTab === 'evidence' 
+                      ? "bg-white text-[#070707] shadow-sm" 
+                      : "text-[#a2a4a9] hover:text-white"
                   )}
                 >
                   <Layers className="w-3.5 h-3.5" />
@@ -285,8 +296,10 @@ export default function App() {
                 <button
                   onClick={() => setActiveTab('regression')}
                   className={clsx(
-                    "px-3 py-1 text-xs font-semibold rounded-md flex items-center space-x-1.5 transition-colors",
-                    activeTab === 'regression' ? "bg-av-surfaceElevated text-av-textPrimary shadow-sm border border-av-borderLight" : "text-av-textSecondary hover:text-av-textPrimary hover:bg-av-surfaceHover border border-transparent"
+                    "px-4 py-1.5 text-xs font-medium rounded-full flex items-center space-x-1.5 transition-all cursor-pointer",
+                    activeTab === 'regression' 
+                      ? "bg-white text-[#070707] shadow-sm" 
+                      : "text-[#a2a4a9] hover:text-white"
                   )}
                 >
                   <FileCode2 className="w-3.5 h-3.5" />
@@ -298,9 +311,9 @@ export default function App() {
               <button
                 onClick={handleReEvaluate}
                 disabled={evaluating}
-                className="btn-secondary py-1 text-xs space-x-1.5"
+                className="btn-harness-ghost px-4 py-1.5 text-xs flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
               >
-                <RefreshCw className={clsx("w-3.5 h-3.5", evaluating && "animate-spin")} />
+                <RefreshCw className={clsx("w-3.5 h-3.5 text-[#70dcd3]", evaluating && "animate-spin")} />
                 <span>Re-Evaluate</span>
               </button>
             </div>
@@ -312,8 +325,8 @@ export default function App() {
             <div className="max-w-6xl mx-auto">
               
               {loading && !scenarioData ? (
-                <div className="p-12 text-center text-av-textMuted font-mono text-sm flex items-center justify-center space-x-2">
-                  <RefreshCw className="w-4 h-4 animate-spin text-av-textSecondary" />
+                <div className="p-12 text-center text-slate-500 font-mono text-xs flex items-center justify-center space-x-2">
+                  <RefreshCw className="w-4 h-4 animate-spin text-slate-400" />
                   <span>Loading scan data...</span>
                 </div>
               ) : (
@@ -327,20 +340,20 @@ export default function App() {
 
                   {activeTab === 'attack' && (
                     <AttackAnalysis 
-                      attackData={scenarioData?.threat_model} 
+                      attackData={scenarioData?.threat_model || scenarioData?.attack_analysis} 
                     />
                   )}
 
                   {activeTab === 'trace' && (
                     <ExecutionTrace 
-                      trace={scenarioData?.trajectory} 
+                      trace={scenarioData?.trajectory || scenarioData?.trace} 
                       evaluation={scenarioData?.evaluation} 
                     />
                   )}
 
                   {activeTab === 'evidence' && (
                     <EvidenceView 
-                      dag={scenarioData?.evidence} 
+                      dag={scenarioData?.evidence || scenarioData?.dag} 
                       evaluation={scenarioData?.evaluation} 
                       stateDiff={scenarioData?.state_diff} 
                     />

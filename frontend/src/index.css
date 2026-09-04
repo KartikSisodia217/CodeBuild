@@ -4,68 +4,86 @@
 
 @layer base {
   :root {
-    --bg-main: #0D0F12;
-    --bg-card: #14171C;
-    --border-card: #252A32;
+    --bg-void: #070707;
+    --card-carbon: #0d0e12;
+    --card-obsidian: #141418;
+    --border-fog: rgba(217, 218, 229, 0.16);
+    --border-steel: #22222a;
+    --bg-main: #070707;
+    --bg-card: #0d0e12;
+    --border-card: #22222a;
   }
   
   html, body {
     margin: 0;
     padding: 0;
-    background-color: var(--bg-main);
-    color: #F3F4F6;
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #070707;
+    color: #ffffff;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    overflow-x: hidden;
+    overflow: hidden;
+  }
+
+  /* Display Headlines: Space Grotesk with airy tracking */
+  h1, h2, h3 {
+    font-family: 'Space Grotesk', sans-serif !important;
+    letter-spacing: 0.025em !important;
   }
 
   code, pre, kbd {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 0.875em;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    letter-spacing: -0.01em;
   }
 }
 
-/* Custom Scrollbars - minimal dark */
+/* Custom Minimal Scrollbar */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #070707;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #252A32;
+  background: #22222a;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2B3038;
+  background: #3e3e4a;
 }
 
-/* React Flow styling overrides for dark theme */
+/* React Flow styling overrides for dark nocturnal theme */
 .react-flow__background {
-  background-color: var(--bg-main) !important;
+  background-color: #070707 !important;
 }
 
 .react-flow__controls {
-  background: #14171C !important;
-  border: 1px solid #252A32 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+  background: #0d0e12 !important;
+  border: 1px solid #22222a !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
 }
 
 .react-flow__controls-button {
-  background: #14171C !important;
-  border-bottom: 1px solid #252A32 !important;
-  fill: #9AA1AD !important;
+  background: #0d0e12 !important;
+  border-bottom: 1px solid #22222a !important;
+  fill: #a2a4a9 !important;
 }
 
 .react-flow__controls-button:hover {
-  background: #171A20 !important;
-  fill: #F3F4F6 !important;
+  background: #141418 !important;
+  fill: #ffffff !important;
+}
+
+/* Carbon Plate Card (Elevated surface with light hairline border) */
+.carbon-card {
+  background-color: #0d0e12;
+  border: 1px solid rgba(217, 218, 229, 0.15);
+  border-radius: 20px;
 }
 
 /* Obsidian Surface (Nested panels & code blocks) */
@@ -75,23 +93,83 @@
   border-radius: 16px;
 }
 
-/* Utility classes for subtle interactions */
+/* Phosphor Mint Highlight Card */
+.phosphor-card {
+  background: linear-gradient(135deg, rgba(112, 220, 211, 0.12) 0%, rgba(13, 14, 18, 0.9) 100%);
+  border: 1px solid rgba(112, 220, 211, 0.35);
+  border-radius: 20px;
+}
+
+/* Filled White Pill Button */
+.btn-harness-white {
+  background-color: #ffffff;
+  color: #070707;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  border-radius: 800px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: -0.01em;
+}
+
+.btn-harness-white:hover {
+  background-color: #f0f0f0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+}
+
+.btn-harness-white:active {
+  transform: scale(0.98);
+}
+
+/* Ghost Pill Button */
+.btn-harness-ghost {
+  background: transparent;
+  border: 1px solid #ffffff;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  border-radius: 800px;
+  transition: all 0.2s ease;
+}
+
+.btn-harness-ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #70dcd3;
+  color: #70dcd3;
+}
+
+/* Matte buttons */
 .btn-matte {
   @apply inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-md transition-all;
 }
 .btn-primary {
-  @apply btn-matte bg-[#E2E8F0] text-[#0D0F12] hover:bg-white;
+  @apply btn-matte bg-white text-[#070707] hover:bg-[#e5e5e6];
 }
 .btn-secondary {
-  @apply btn-matte bg-[#14171C] text-[#9AA1AD] border border-[#252A32] hover:bg-[#1A1E24] hover:text-[#F3F4F6] hover:border-[#2B3038];
+  @apply btn-matte bg-[#0d0e12] text-[#a2a4a9] border border-[#22222a] hover:bg-[#141418] hover:text-white hover:border-[#2e3038];
 }
 
-/* Simple animations */
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+/* Outlined Status Badges (800px Pill) */
+.badge-pill {
+  border-radius: 800px;
+  padding: 2px 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
-.animate-spin-slow {
-  animation: spin-slow 2s linear infinite;
+/* Technical Upper Tracked Eyebrow Label */
+.eyebrow-tech {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #a6e5f2;
+}
+
+/* Subtle Phosphor Glow */
+.glow-mint {
+  box-shadow: 0 0 25px rgba(112, 220, 211, 0.2);
 }
