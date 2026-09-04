@@ -188,7 +188,8 @@ def test_evaluator_tracks_first_injection_source():
             ),
         ],
     )
-    result = evaluate_trace(trace)
+    from agentveto.schemas import PolicyRule
+    result = evaluate_trace(trace, custom_rules=[PolicyRule(rule_id='r', name='r', sink_tool='execute_refund', description='r', threat_category='ASI01')])
     assert result.status == SecurityVerdict.VETO
     # Should attribute to the FIRST injection source, not the second
     assert result.injection_source_span_id == "first_source"

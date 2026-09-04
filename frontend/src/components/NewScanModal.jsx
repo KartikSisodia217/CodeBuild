@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
-import { X, Play, Server, UploadCloud, Loader2, CheckCircle2 } from 'lucide-react';
+import { X, Play, Server, UploadCloud, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import clsx from 'clsx';
 
 export default function NewScanModal({ isOpen, onClose, onStartScan }) {
@@ -258,41 +258,61 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
                   <div className="flex items-center justify-between pb-4 border-b border-av-border">
                     <div>
                       <h3 className="text-base font-semibold text-av-textPrimary">{manifest.project_name || 'Uploaded Project'}</h3>
-                      <p className="text-xs text-av-textSecondary mt-1">Detected Framework: {manifest.integration_type || manifest.language}</p>
+                      <p className="text-xs text-av-textSecondary mt-1">Detected Framework: {manifest.integration_type || manifest.language || 'Unknown'}</p>
                     </div>
-                    <div className="px-2 py-1 bg-av-passBg text-av-pass rounded flex items-center space-x-1.5 border border-av-pass/20">
-                      <CheckCircle2 className="w-3 h-3" />
-                      <span className="text-[10px] font-semibold uppercase tracking-wider">Ready for Scan</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="text-xs font-semibold text-av-textSecondary uppercase tracking-wider">Detected Components</h4>
-                    {manifest.agents?.length === 0 ? (
-                       <p className="text-sm text-av-textMuted bg-av-surface p-4 rounded-lg border border-av-border">No agents detected in project.</p>
+                    {manifest.agentic && manifest.supported ? (
+                      <div className="px-2 py-1 bg-av-passBg text-av-pass rounded flex items-center space-x-1.5 border border-av-pass/20">
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span className="text-[10px] font-semibold uppercase tracking-wider">Ready for Scan</span>
+                      </div>
                     ) : (
-                      manifest.agents?.map((agent, i) => (
-                        <div key={i} className="p-4 rounded-lg bg-av-surface border border-av-border flex justify-between items-center">
-                          <div>
-                            <div className="text-sm font-semibold text-av-textPrimary">{agent.name}</div>
-                            <div className="text-xs text-av-textSecondary mt-1 font-mono">{agent.file}</div>
-                          </div>
-                          <div className="text-[10px] text-av-textSecondary bg-av-bg border border-av-border px-2 py-0.5 rounded uppercase font-semibold">
-                            {agent.tools?.length || 0} tools found
-                          </div>
-                        </div>
-                      ))
+                      <div className="px-2 py-1 bg-av-vetoBg text-av-veto rounded flex items-center space-x-1.5 border border-av-veto/20">
+                        <XCircle className="w-3 h-3" />
+                        <span className="text-[10px] font-semibold uppercase tracking-wider">Unsupported Project</span>
+                      </div>
                     )}
                   </div>
+
+                  {!manifest.agentic || !manifest.supported ? (
+                    <div className="bg-av-vetoBg border border-av-veto/30 rounded-lg p-5 text-sm text-av-veto/90">
+                      <p className="font-semibold mb-1">Cannot Scan Project</p>
+                      <p>
+                        {!manifest.agentic 
+                          ? "This project does not contain any detected agentic frameworks, tools, or generative execution paths. AgentVeto requires an active agent integration to scan."
+                          : "This project uses an unsupported integration framework."}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-semibold text-av-textSecondary uppercase tracking-wider">Detected Components</h4>
+                      {manifest.agents?.length === 0 ? (
+                         <p className="text-sm text-av-textMuted bg-av-surface p-4 rounded-lg border border-av-border">No agents detected in project.</p>
+                      ) : (
+                        manifest.agents?.map((agent, i) => (
+                          <div key={i} className="p-4 rounded-lg bg-av-surface border border-av-border flex justify-between items-center">
+                            <div>
+                              <div className="text-sm font-semibold text-av-textPrimary">{agent.name}</div>
+                              <div className="text-xs text-av-textSecondary mt-1 font-mono">{agent.file}</div>
+                            </div>
+                            <div className="text-[10px] text-av-textSecondary bg-av-bg border border-av-border px-2 py-0.5 rounded uppercase font-semibold">
+                              {agent.tools?.length || 0} tools found
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
 
                   <div className="pt-4 flex items-center justify-between">
                     <button type="button" onClick={() => setUploadStatus('idle')} className="text-xs font-semibold text-av-textSecondary hover:text-av-textPrimary">
                       Back
                     </button>
-                    <button onClick={handleStartManifestScan} className="btn-primary space-x-1.5">
-                      <Play className="w-3.5 h-3.5" />
-                      <span>Run Scan</span>
-                    </button>
+                    {manifest.agentic && manifest.supported && (
+                      <button onClick={handleStartManifestScan} className="btn-primary space-x-1.5">
+                        <Play className="w-3.5 h-3.5" />
+                        <span>Run Scan</span>
+                      </button>
+                    )}
                   </div>
 
                 </div>

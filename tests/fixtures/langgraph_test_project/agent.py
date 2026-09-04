@@ -29,7 +29,7 @@ class DummyChatModel(BaseChatModel):
         else:
             # Check if there is a tool message with payload
             last_tool_msg = next((m for m in reversed(messages) if getattr(m, 'type', '') == 'tool'), None)
-            if last_tool_msg and "auto_action" in last_tool_msg.content:
+            if last_tool_msg and ("auto_action" in last_tool_msg.content or "SYSTEM OVERRIDE" in last_tool_msg.content):
                 # The payload tricked the dummy LLM into issuing a refund
                 return ChatResult(generations=[ChatGeneration(message=AIMessage(content="", tool_calls=[
                     ToolCall(name="execute_refund", args={"amount": 999.0, "account_id": "ACCT-FIXTURE-402", "authorized": False}, id=str(uuid.uuid4()))

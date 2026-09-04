@@ -218,12 +218,17 @@ class PolicyEngine:
 
         elapsed_ms = (time.time() - start_time) * 1000.0
 
+        has_tool_spans = any(s.kind == SpanKind.TOOL for s in trace.spans)
+        
         if violating_span_id:
             status = SecurityVerdict.VETO
         elif is_looping:
             status = SecurityVerdict.VETO
             threat_cat = "ASI08: Cascading Tool Loops & Retry Storms"
             violation_reason = f"Cascading Tool Loop (ASI08): Excessive repeated tool calls detected: {consecutive_tool_calls}."
+        elif not has_tool_spans:
+            status = None
+            violation_reason = "No tool execution observations were captured; verdict unavailable."
         else:
             status = SecurityVerdict.PASS
             violation_reason = "All security invariants verified. No unauthorized sink tool calls or data leaks detected."

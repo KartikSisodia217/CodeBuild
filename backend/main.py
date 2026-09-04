@@ -67,7 +67,7 @@ class StartScanRequest(BaseModel):
     agent_name: str = "Customer Support Agent"
     attack_profile: str = "Adaptive Adversarial Testing (ASI01)"
     environment: str = "Synthetic Sandbox"
-    scenario_id: Optional[str] = "zero_click_echoleak"
+    scenario_id: Optional[str] = None
     project_manifest: Optional[ProjectManifest] = None
 
 class GithubAnalyzeRequest(BaseModel):
@@ -181,17 +181,21 @@ def list_scenarios():
 def start_scan_endpoint(req: StartScanRequest):
     if req.project_manifest:
         if not req.project_manifest.agentic:
-            return ScanResult(
+            res = ScanResult(
                 status=ScanStatus.NOT_AGENTIC,
                 metadata={"reason": "no_agent_detected", "message": "No agentic component was detected in this project."},
                 project_manifest=req.project_manifest
             )
+            SCAN_RUNS[res.run_id] = res
+            return res
         if not req.project_manifest.supported:
-            return ScanResult(
+            res = ScanResult(
                 status=ScanStatus.UNSUPPORTED,
                 metadata={"reason": "no_supported_integration", "message": "Project analyzed, but no supported AgentVeto runtime integration was detected."},
                 project_manifest=req.project_manifest
             )
+            SCAN_RUNS[res.run_id] = res
+            return res
         
         if req.project_manifest.integration_type == "langgraph":
             workspace = get_workspace(req.project_manifest.project_id)
@@ -205,13 +209,15 @@ def start_scan_endpoint(req: StartScanRequest):
             SCAN_RUNS[scan_result.run_id] = scan_result
             return scan_result
 
-        return ScanResult(
+        res = ScanResult(
             status=ScanStatus.UNSUPPORTED,
             metadata={"message": "Only configured LangGraph projects are supported by the canonical runtime."},
             project_manifest=req.project_manifest
         )
-    else:
-        scenario_id = req.scenario_id or "zero_click_echoleak"
+        SCAN_RUNS[res.run_id] = res
+        return res
+    elif req.scenario_id:
+        scenario_id = req.scenario_id
         
         if scenario_id not in ["zero_click_echoleak", "benign_support_flow"]:
             raise HTTPException(
@@ -229,6 +235,11 @@ def start_scan_endpoint(req: StartScanRequest):
             scan_result.metadata["yaml_content"] = yaml_str
         SCAN_RUNS[scan_result.run_id] = scan_result
         return scan_result
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Either project_manifest or scenario_id must be provided."
+        )
 
 @app.get("/api/scenarios/{scenario_id}")
 def get_scenario_details(scenario_id: str):
@@ -259,9 +270,19 @@ def get_scan(run_id: str):
 @app.post("/api/scan/{run_id}/re-evaluate", response_model=ScanResult)
 def reevaluate_scan(run_id: str):
     result = SCAN_RUNS.get(run_id)
-    if not result or result.status != ScanStatus.COMPLETED or not result.trajectory or not result.trajectory.spans:
-        raise HTTPException(status_code=409, detail="Only completed runs with observed trajectories can be re-evaluated.")
-    rules = [PolicyRule(rule_id="RULE-REEVALUATE", name="OBSERVED_HIGH_RISK_SINK_WITHOUT_AUTHORIZATION", sink_tool=result.attack_plan.sink_tool or "", description="Use the original run's schema-derived sink.")]
+    if not result:
+        raise HTTPException(status_code=404, detail="Unknown scan run.")
+        
+    if result.status in [ScanStatus.NOT_AGENTIC, ScanStatus.UNSUPPORTED]:
+        raise HTTPException(status_code=400, detail=f"Cannot re-evaluate a project with status {result.status.value}.")
+        
+    if result.status in [ScanStatus.UNSUPPORTED_ENTRYPOINT, ScanStatus.EXECUTION_UNAVAILABLE, ScanStatus.EXECUTION_FAILED]:
+        return result
+        
+    if result.status != ScanStatus.COMPLETED or not result.trajectory or not result.trajectory.spans:
+        return result
+        
+    rules = [PolicyRule(rule_id="RULE-REEVALUATE", name="OBSERVED_HIGH_RISK_SINK_WITHOUT_AUTHORIZATION", sink_tool=result.attack_plan.sink_tool if result.attack_plan else "", description="Use the original run's schema-derived sink.")]
     evaluation = evaluate_trace(result.trajectory, result.state_diff, rules)
     result.evaluation = evaluation
     result.verdict = evaluation.status

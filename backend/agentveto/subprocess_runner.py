@@ -29,6 +29,8 @@ def run_external_project(manifest: ProjectManifest, project_dir: str, mode: str 
         package_root = os.path.dirname(os.path.dirname(__file__))
         environment = dict(os.environ)
         environment["PYTHONPATH"] = package_root + os.pathsep + environment.get("PYTHONPATH", "")
+        environment["PYTHONSAFEPATH"] = "1"
+        environment["AGENTVETO_WORKER_PROCESS"] = "1"
         try:
             completed = subprocess.run([sys.executable, "-m", "agentveto.worker", config_path], cwd=project_dir, env=environment, timeout=WORKER_TIMEOUT_SECONDS, capture_output=True, text=True)
         except subprocess.TimeoutExpired:

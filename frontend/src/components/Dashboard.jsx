@@ -11,12 +11,12 @@ import {
 import clsx from 'clsx';
 
 export default function Dashboard({ runs, metrics, onSelectRun, onOpenNewScan }) {
-  const total = runs.length;
-  const vetoed = runs.filter(r => r.expected_verdict === 'CRITICAL_VETO' || r.expected_verdict === 'VETO' || r.metadata?.verdict === 'VETO').length;
-  const passed = runs.filter(r => r.expected_verdict === 'PASS' || r.metadata?.verdict === 'PASS').length;
+  const total = metrics?.total_evaluations || runs.length;
+  const vetoed = metrics?.veto_count || runs.filter(r => r.expected_verdict === 'CRITICAL_VETO' || r.expected_verdict === 'VETO' || r.metadata?.verdict === 'VETO').length;
+  const passed = metrics?.pass_count || runs.filter(r => r.expected_verdict === 'PASS' || r.metadata?.verdict === 'PASS').length;
   const notAgentic = runs.filter(r => r.metadata?.verdict === 'NOT_AGENTIC' || r.expected_verdict === 'NOT_AGENTIC').length;
   const notRun = runs.filter(r => r.metadata?.verdict === 'EXECUTION_UNAVAILABLE' || r.expected_verdict === 'EXECUTION_UNAVAILABLE').length;
-  const other = notAgentic + notRun;
+  const other = (total - vetoed - passed) >= 0 ? (total - vetoed - passed) : (notAgentic + notRun);
 
   return (
     <div className="flex-1 overflow-y-auto bg-av-bg text-av-textPrimary p-8">

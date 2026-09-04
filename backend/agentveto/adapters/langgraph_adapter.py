@@ -10,7 +10,7 @@ from langchain_core.messages import HumanMessage
 from agentveto.adapters.base import AgentAdapter
 from agentveto.contracts.schemas import ExecutionResult, ScanStatus, ToolSchema, TrajectoryData
 from agentveto.core.context_vars import attack_payload_var, run_id_var, sandbox_manager_var, state_manager_var, trace_collector_var
-from agentveto.interception.langchain_interceptor import ScopedLangchainInterceptor
+from agentveto.interception.langchain_interceptor import patch_tool_instances
 from agentveto.sandbox.mock_generator import SandboxManager
 from agentveto.sandbox.state_manager import SandboxStateManager
 
@@ -68,8 +68,8 @@ class LangGraphAdapter(AgentAdapter):
             with worker_context(self.run_id, sandbox, state, spans):
                 token = attack_payload_var.set(payload)
                 try:
-                    with ScopedLangchainInterceptor(policies):
-                        graph.invoke({"messages": [HumanMessage(content=self.execution_options.get("input", "Process the available work."))]})
+                    patch_tool_instances(tools, policies)
+                    graph.invoke({"messages": [HumanMessage(content=self.execution_options.get("input", "Process the available work."))]})
                 finally:
                     attack_payload_var.reset(token)
             diff = state.compute_diff()
