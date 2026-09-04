@@ -4,181 +4,136 @@
 
 @layer base {
   :root {
-    --bg-main: #07090e;
-    --bg-card: #0d121d;
-    --border-card: #1e293b;
+    --bg-void: #070707;
+    --card-carbon: #0d0e12;
+    --card-obsidian: #141418;
+    --border-fog: rgba(217, 218, 229, 0.16);
+    --border-steel: #22222a;
   }
   
   html, body {
     margin: 0;
     padding: 0;
-    background-color: #090D14;
-    color: #E2E8F0;
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #070707;
+    color: #ffffff;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow: hidden;
-    letter-spacing: -0.01em;
+  }
+
+  /* Harness.io Display Headlines: Condensed Space Grotesk with airy positive tracking (0.04em - 0.056em) */
+  h1, h2, h3 {
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-weight: 300 !important;
+    letter-spacing: 0.045em !important;
   }
 
   code, pre, kbd {
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    letter-spacing: -0.01em;
   }
 }
 
-/* Custom Scrollbars */
+/* Custom Minimal Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: #070707;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #22222a;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #3e3e4a;
 }
 
-/* Glowing glass card utility */
-.glass-panel {
-  background: rgba(13, 18, 29, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+/* Harness Carbon Plate Card (Elevated surface with light hairline border) */
+.carbon-card {
+  background-color: #0d0e12;
+  border: 1px solid rgba(217, 218, 229, 0.15);
+  border-radius: 20px;
 }
 
-.glow-red {
-  box-shadow: 0 0 25px rgba(239, 68, 68, 0.25);
+/* Obsidian Surface (Nested panels & code blocks) */
+.obsidian-surface {
+  background-color: #141418;
+  border: 1px solid #22222a;
+  border-radius: 16px;
 }
 
-.glow-emerald {
-  box-shadow: 0 0 25px rgba(16, 185, 129, 0.25);
+/* Phosphor Mint Highlight Card (Harness signature accent card) */
+.phosphor-card {
+  background: linear-gradient(135deg, rgba(112, 220, 211, 0.12) 0%, rgba(13, 14, 18, 0.9) 100%);
+  border: 1px solid rgba(112, 220, 211, 0.35);
+  border-radius: 20px;
 }
 
-.glow-indigo {
-  box-shadow: 0 0 25px rgba(99, 102, 241, 0.25);
+/* Filled White Pill Button (Primary CTA - Harness signature hardware button) */
+.btn-harness-white {
+  background-color: #ffffff;
+  color: #070707;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  border-radius: 800px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: -0.01em;
 }
 
-.glow-amber {
-  box-shadow: 0 0 25px rgba(245, 158, 11, 0.25);
+.btn-harness-white:hover {
+  background-color: #f0f0f0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
 }
 
-/* React Flow styling overrides */
-.react-flow__background {
-  background-color: #07090e !important;
+.btn-harness-white:active {
+  transform: scale(0.98);
 }
 
-.react-flow__controls {
-  background: #0d121d !important;
-  border: 1px solid #1e293b !important;
-  border-radius: 8px !important;
-  overflow: hidden;
+/* Ghost Pill Button (Secondary Action) */
+.btn-harness-ghost {
+  background: transparent;
+  border: 1px solid #ffffff;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  border-radius: 800px;
+  transition: all 0.2s ease;
 }
 
-.react-flow__controls-button {
-  background: #0d121d !important;
-  border-bottom: 1px solid #1e293b !important;
-  fill: #94a3b8 !important;
+.btn-harness-ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #70dcd3;
+  color: #70dcd3;
 }
 
-.react-flow__controls-button:hover {
-  background: #1e293b !important;
-  fill: #f8fafc !important;
+/* Outlined Status Badges (800px Pill) */
+.badge-pill {
+  border-radius: 800px;
+  padding: 2px 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
-.react-flow__attribution {
-  display: none !important;
+/* Technical Upper Tracked Eyebrow Label */
+.eyebrow-tech {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #a6e5f2;
 }
 
-/* Animations for floating AI Agent avatars and holographic HUD */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-8px) rotate(1deg);
-  }
+/* Subtle Phosphor Glow */
+.glow-mint {
+  box-shadow: 0 0 25px rgba(112, 220, 211, 0.2);
 }
-
-@keyframes float-slow {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-14px) rotate(-1.5deg);
-  }
-}
-
-@keyframes float-reverse {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(10px) rotate(1.5deg);
-  }
-}
-
-@keyframes pulse-glow {
-  0%, 100% {
-    opacity: 0.6;
-    filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.4));
-  }
-  50% {
-    opacity: 1;
-    filter: drop-shadow(0 0 25px rgba(99, 102, 241, 0.8));
-  }
-}
-
-@keyframes radar-sweep {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes scan-beam {
-  0% {
-    top: 0%;
-    opacity: 0.8;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    top: 100%;
-    opacity: 0.2;
-  }
-}
-
-.animate-float {
-  animation: float 4s ease-in-out infinite;
-}
-
-.animate-float-slow {
-  animation: float-slow 7s ease-in-out infinite;
-}
-
-.animate-float-reverse {
-  animation: float-reverse 5.5s ease-in-out infinite;
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
-}
-
-.animate-radar {
-  animation: radar-sweep 8s linear infinite;
-}
-
-.animate-scan-beam {
-  animation: scan-beam 2.5s ease-in-out infinite;
-}
-

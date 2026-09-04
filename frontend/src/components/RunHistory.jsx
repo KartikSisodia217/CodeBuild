@@ -12,40 +12,40 @@ import clsx from 'clsx';
 
 export default function RunHistory({ runs, onSelectRun }) {
   return (
-    <div className="flex-1 overflow-y-auto bg-[#0B0F17] text-slate-200 p-8">
+    <div className="flex-1 overflow-y-auto bg-[#070707] text-white p-8 font-sans">
       <div className="max-w-6xl mx-auto space-y-6">
         
-        <div className="flex items-center justify-between pb-6 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-6 border-b border-[#22222a]">
           <div>
-            <div className="flex items-center space-x-2 text-xs font-mono text-indigo-400 mb-1">
-              <History className="w-3.5 h-3.5" />
-              <span>CI/CD ADJUDICATION AUDIT LOG</span>
+            <div className="flex items-center space-x-2 text-xs font-mono text-[#a2a4a9] mb-1">
+              <History className="w-3.5 h-3.5 text-[#70dcd3]" />
+              <span className="tracking-[0.094em] uppercase">CI/CD ADJUDICATION AUDIT LOG</span>
             </div>
-            <h1 className="text-2xl font-black tracking-tight text-white">Security Run History</h1>
-            <p className="text-sm text-slate-400 mt-1">
+            <h1 className="text-2xl font-display font-light tracking-[0.056em] text-white">Security Run History</h1>
+            <p className="text-sm text-[#aeaeb7] mt-1 font-normal">
               Historical record of all autonomous adversarial simulations and build gating decisions.
             </p>
           </div>
-          <span className="text-xs font-mono text-slate-500 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg">
+          <span className="text-xs font-mono text-[#a2a4a9] bg-[#0d0e12] border border-[#22222a] px-3.5 py-1.5 rounded-full">
             {runs.length} Records Found
           </span>
         </div>
 
         {/* History Table */}
-        <div className="rounded-2xl border border-slate-800 bg-[#121824] overflow-hidden shadow-2xl">
+        <div className="bg-[#0d0e12] border border-[#d9dae5]/16 rounded-[20px] overflow-hidden">
           <table className="w-full text-left font-mono text-xs">
-            <thead className="bg-[#0E131F] text-slate-400 uppercase text-[11px] border-b border-slate-800">
+            <thead className="bg-[#141418] text-[#a2a4a9] uppercase text-[11px] border-b border-[#22222a]">
               <tr>
-                <th className="p-4 pl-6">Run ID</th>
-                <th className="p-4">Target Agent</th>
-                <th className="p-4">Adjudication Result</th>
-                <th className="p-4">Threat Classification</th>
-                <th className="p-4">Duration</th>
-                <th className="p-4">Timestamp</th>
-                <th className="p-4 pr-6 text-right">Action</th>
+                <th className="p-4 pl-6 tracking-[0.094em]">Run ID</th>
+                <th className="p-4 tracking-[0.094em]">Target Agent</th>
+                <th className="p-4 tracking-[0.094em]">Adjudication Result</th>
+                <th className="p-4 tracking-[0.094em]">Threat Classification</th>
+                <th className="p-4 tracking-[0.094em]">Duration</th>
+                <th className="p-4 tracking-[0.094em]">Timestamp</th>
+                <th className="p-4 pr-6 text-right tracking-[0.094em]">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/80 bg-[#121824]">
+            <tbody className="divide-y divide-[#22222a] bg-[#0d0e12]">
               {runs.map((r) => {
                 const isVeto = r.expected_verdict === 'CRITICAL_VETO';
                 const isPass = r.expected_verdict === 'PASS';
@@ -54,32 +54,32 @@ export default function RunHistory({ runs, onSelectRun }) {
                   <tr 
                     key={r.id}
                     onClick={() => onSelectRun(r.id)}
-                    className="hover:bg-slate-800/40 cursor-pointer transition-colors group"
+                    className="hover:bg-[#141418]/60 cursor-pointer transition-colors group"
                   >
-                    <td className="p-4 pl-6 font-bold text-indigo-400">{r.run_number}</td>
-                    <td className="p-4 font-bold text-white group-hover:text-indigo-300 transition-colors">
+                    <td className="p-4 pl-6 font-medium text-[#70dcd3]">{r.run_number}</td>
+                    <td className="p-4 font-medium text-white group-hover:text-[#70dcd3] transition-colors">
                       {r.agent_name}
-                      <span className="block text-[10px] text-slate-500 font-normal">{r.name}</span>
+                      <span className="block text-[10px] text-[#a2a4a9] font-normal">{r.name}</span>
                     </td>
                     <td className="p-4">
                       <span className={clsx(
-                        "px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider inline-flex items-center space-x-1.5 border",
-                        isVeto ? "bg-red-500/10 text-red-400 border-red-500/30" :
-                        isPass ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" :
-                        "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                        "px-3 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider inline-flex items-center space-x-1.5 border",
+                        isVeto ? "border-[#f43f5e] text-[#f43f5e]" :
+                        isPass ? "border-[#70dcd3] text-[#70dcd3]" :
+                        "border-[#aeaeb7] text-[#aeaeb7]"
                       )}>
                         <span>{isVeto ? '🔴 VETO' : isPass ? '🟢 PASS' : '🟡 WARN'}</span>
                       </span>
                     </td>
-                    <td className="p-4 text-slate-300">
-                      <span className="px-2 py-0.5 rounded text-[10px] bg-slate-800 border border-slate-700">
+                    <td className="p-4 text-[#aeaeb7]">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] bg-[#141418] text-[#aeaeb7] border border-[#22222a]">
                         {r.threat_category}
                       </span>
                     </td>
-                    <td className="p-4 text-slate-400">{r.duration}</td>
-                    <td className="p-4 text-slate-500">{r.timestamp}</td>
+                    <td className="p-4 text-[#aeaeb7]">{r.duration}</td>
+                    <td className="p-4 text-[#60606c]">{r.timestamp}</td>
                     <td className="p-4 pr-6 text-right">
-                      <button className="px-3 py-1.5 rounded-lg bg-slate-800 group-hover:bg-indigo-600 text-slate-300 group-hover:text-white transition-all text-[11px] font-semibold flex items-center space-x-1 ml-auto">
+                      <button className="px-3.5 py-1.5 rounded-full border border-white/20 text-[11px] font-normal text-white flex items-center space-x-1 ml-auto group-hover:bg-white group-hover:text-[#070707] transition-all cursor-pointer">
                         <span>Inspect</span>
                         <ChevronRight className="w-3.5 h-3.5" />
                       </button>

@@ -48,23 +48,23 @@ export default function ScanProgress({ scanConfig, scanResult, onComplete }) {
   }, [currentStep]);
 
   return (
-    <div className="flex-1 flex items-center justify-center bg-[#0B0F17] p-8 select-none">
-      <div className="w-full max-w-2xl rounded-2xl bg-[#121824] border border-slate-800 shadow-2xl p-8 space-y-6">
+    <div className="flex-1 flex items-center justify-center bg-[#070707] p-8 select-none">
+      <div className="w-full max-w-2xl rounded-[20px] bg-[#0d0e12] border border-[#d9dae5]/16 shadow-2xl p-8 space-y-6">
         
         {/* Header */}
-        <div className="flex items-center justify-between pb-6 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-6 border-b border-[#22222a]">
           <div>
-            <div className="flex items-center space-x-2 text-xs font-mono text-indigo-400 mb-1">
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
-              <span>SECURITY SCAN RUNNING</span>
+            <div className="flex items-center space-x-2 text-xs font-mono text-[#70dcd3] mb-1">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#70dcd3]" />
+              <span className="tracking-[0.094em] uppercase">SECURITY SCAN RUNNING</span>
             </div>
-            <h2 className="text-xl font-bold text-white tracking-tight">{scanConfig.agent_name}</h2>
-            <p className="text-xs text-slate-400 font-mono">Profile: {scanConfig.attack_profile}</p>
+            <h2 className="text-xl font-display font-light text-white tracking-[0.056em]">{scanConfig.agent_name}</h2>
+            <p className="text-xs text-[#aeaeb7] font-mono mt-0.5">Profile: {scanConfig.attack_profile}</p>
           </div>
 
           <button
             onClick={onComplete}
-            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 transition-colors"
+            className="btn-harness-ghost px-4 py-1.5 text-xs cursor-pointer"
           >
             Skip to Result →
           </button>
@@ -81,41 +81,41 @@ export default function ScanProgress({ scanConfig, scanResult, onComplete }) {
               <div 
                 key={idx}
                 className={clsx(
-                  "p-3 rounded-xl border transition-all flex items-center justify-between",
-                  isFinished ? "bg-slate-900/40 border-slate-800/80 text-slate-300" :
-                  isCurrent ? "bg-indigo-950/20 border-indigo-500/40 text-white shadow-md shadow-indigo-500/10" :
-                  "opacity-30 border-transparent text-slate-600"
+                  "p-3.5 rounded-xl border transition-all flex items-center justify-between",
+                  isFinished ? "bg-[#141418] border-[#22222a] text-[#aeaeb7]" :
+                  isCurrent ? "bg-[#141418] border-[#70dcd3]/40 text-white" :
+                  "opacity-30 border-transparent text-[#60606c]"
                 )}
               >
                 <div className="flex items-center space-x-3">
                   <div className="w-5 h-5 flex items-center justify-center shrink-0">
                     {isFinished ? (
                       step.status === 'refused' ? (
-                        <span className="text-slate-400 text-xs font-mono font-bold">❌</span>
+                        <span className="text-[#a2a4a9] text-xs font-mono">❌</span>
                       ) : step.status === 'influenced' ? (
-                        <span className="text-amber-400 text-xs font-mono font-bold">⚠️</span>
+                        <span className="text-[#f43f5e] text-xs font-mono">⚠️</span>
                       ) : (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <CheckCircle2 className="w-4 h-4 text-[#70dcd3]" />
                       )
                     ) : isCurrent ? (
-                      <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
+                      <Loader2 className="w-4 h-4 text-[#70dcd3] animate-spin" />
                     ) : (
-                      <div className="w-2 h-2 rounded-full bg-slate-700" />
+                      <div className="w-2 h-2 rounded-full bg-[#2e3038]" />
                     )}
                   </div>
 
                   <div>
-                    <div className="text-xs font-bold font-mono tracking-wide">{step.title}</div>
-                    <div className="text-[10px] text-slate-400">{step.detail}</div>
+                    <div className="text-xs font-mono font-medium tracking-wide text-white">{step.title}</div>
+                    <div className="text-[10px] text-[#a2a4a9]">{step.detail}</div>
                   </div>
                 </div>
 
                 {isFinished && step.outcome && (
                   <div className={clsx(
-                    "px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border",
-                    step.status === 'refused' ? "bg-slate-800 text-slate-400 border-slate-700" :
-                    step.status === 'influenced' ? "bg-amber-500/20 text-amber-400 border-amber-500/30 animate-pulse" :
-                    "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                    "px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase border",
+                    step.status === 'refused' ? "border-[#2e3038] text-[#a2a4a9]" :
+                    step.status === 'influenced' ? "border-[#f43f5e] text-[#f43f5e]" :
+                    "border-[#70dcd3] text-[#70dcd3]"
                   )}>
                     {step.outcome}
                   </div>
@@ -128,22 +128,22 @@ export default function ScanProgress({ scanConfig, scanResult, onComplete }) {
         {/* Final Decision Banner when finished */}
         {currentStep >= steps.length && (
           <div className={clsx(
-            "p-4 rounded-xl border flex items-center justify-between animate-fadeIn",
+            "p-5 rounded-2xl border flex items-center justify-between animate-fadeIn bg-[#141418]",
             isVeto
-              ? "bg-red-950/30 border-red-500/50 text-red-300"
-              : "bg-emerald-950/30 border-emerald-500/50 text-emerald-300"
+              ? "border-[#f43f5e]/40 text-white"
+              : "border-[#70dcd3]/40 text-white"
           )}>
             <div className="flex items-center space-x-3">
               {isVeto ? (
-                <ShieldAlert className="w-6 h-6 text-red-400" />
+                <ShieldAlert className="w-6 h-6 text-[#f43f5e]" />
               ) : (
-                <ShieldCheck className="w-6 h-6 text-emerald-400" />
+                <ShieldCheck className="w-6 h-6 text-[#70dcd3]" />
               )}
               <div>
-                <div className="text-sm font-black font-mono uppercase">
+                <div className="text-sm font-medium font-mono uppercase tracking-[0.056em]">
                   {isVeto ? '🔴 BUILD VETOED' : '🟢 BUILD PASSED'}
                 </div>
-                <div className="text-xs text-slate-400">
+                <div className="text-xs text-[#aeaeb7] mt-0.5 font-normal">
                   {evaluation.reason || (isVeto ? 'Deterministic policy violation proven.' : 'No exploitable policy violations detected.')}
                 </div>
               </div>
@@ -151,10 +151,10 @@ export default function ScanProgress({ scanConfig, scanResult, onComplete }) {
 
             <button
               onClick={onComplete}
-              className="px-4 py-2 bg-white text-slate-950 hover:bg-slate-200 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-colors"
+              className="btn-harness-white px-5 py-2.5 text-xs flex items-center space-x-1.5 cursor-pointer"
             >
               <span>View Run Details</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5 text-[#070707]" />
             </button>
           </div>
         )}

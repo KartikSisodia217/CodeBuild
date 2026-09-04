@@ -37,49 +37,46 @@ export default function RunOverview({ data, onSwitchTab }) {
       
       {/* Hero Decision Banner */}
       <div className={clsx(
-        "p-6 rounded-2xl border flex items-center justify-between shadow-xl relative overflow-hidden",
+        "p-6 rounded-[20px] border flex items-center justify-between relative overflow-hidden bg-[#0d0e12]",
         isVeto 
-          ? "bg-gradient-to-r from-red-950/30 via-[#130B0F] to-[#130B0F] border-red-500/40 glow-red" 
+          ? "border-[#f43f5e]/40" 
           : isPass 
-          ? "bg-gradient-to-r from-emerald-950/30 via-[#091512] to-[#091512] border-emerald-500/40 glow-emerald"
+          ? "border-[#70dcd3]/40"
           : isNotScanned
-          ? "bg-gradient-to-r from-slate-900 via-[#0B0F15] to-[#0B0F15] border-slate-700/40 glow-slate"
-          : "bg-gradient-to-r from-amber-950/30 via-[#161208] to-[#161208] border-amber-500/40 glow-amber"
+          ? "border-[#22222a]"
+          : "border-[#d9dae5]/16"
       )}>
-        {/* Animated Cyber Scan Beam */}
-        <div className="absolute inset-x-0 h-10 bg-gradient-to-b from-transparent via-white/5 to-transparent animate-scan-beam pointer-events-none" />
-
         <div className="flex items-center space-x-5">
           <div className={clsx(
-            "w-14 h-14 rounded-2xl flex items-center justify-center border shadow-lg shrink-0",
-            isVeto ? "bg-red-500/15 border-red-500/35 text-red-400" :
-            isPass ? "bg-emerald-500/15 border-emerald-500/35 text-emerald-400" :
-            isNotScanned ? "bg-slate-500/15 border-slate-500/35 text-slate-400" :
-            "bg-amber-500/15 border-amber-500/35 text-amber-400"
+            "w-12 h-12 rounded-full flex items-center justify-center border shrink-0",
+            isVeto ? "bg-[#f43f5e]/10 border-[#f43f5e]/30 text-[#f43f5e]" :
+            isPass ? "bg-[#70dcd3]/10 border-[#70dcd3]/30 text-[#70dcd3]" :
+            isNotScanned ? "bg-white/5 border-[#22222a] text-[#aeaeb7]" :
+            "bg-white/5 border-white/15 text-white"
           )}>
-            {isVeto ? <ShieldAlert className="w-7 h-7 animate-pulse" /> :
-             isPass ? <ShieldCheck className="w-7 h-7" /> :
-             isNotScanned ? <AlertTriangle className="w-7 h-7" /> :
-             <AlertTriangle className="w-7 h-7" />}
+            {isVeto ? <ShieldAlert className="w-6 h-6 animate-pulse" /> :
+             isPass ? <ShieldCheck className="w-6 h-6" /> :
+             isNotScanned ? <AlertTriangle className="w-6 h-6" /> :
+             <AlertTriangle className="w-6 h-6" />}
           </div>
 
           <div>
             <div className="flex items-center space-x-3">
-              <h1 className="text-2xl font-bold font-mono tracking-tight text-white uppercase">
+              <h1 className="text-2xl font-display font-light tracking-[0.056em] text-white uppercase">
                 {isVeto ? '🔴 BUILD VETOED' : isPass ? '🟢 BUILD PASSED' : isNotScanned ? '⚪ SCAN NOT RUN' : '🟡 POLICY WARNING'}
               </h1>
               <span className={clsx(
-                "px-2.5 py-0.5 rounded text-xs font-mono font-bold uppercase border",
-                isVeto ? "bg-red-500/15 text-red-300 border-red-500/30" :
-                isPass ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" :
-                isNotScanned ? "bg-slate-500/15 text-slate-300 border-slate-500/30" :
-                "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                "px-3 py-0.5 rounded-full text-xs font-mono font-medium uppercase border",
+                isVeto ? "border-[#f43f5e] text-[#f43f5e]" :
+                isPass ? "border-[#70dcd3] text-[#70dcd3]" :
+                isNotScanned ? "border-[#60606c] text-[#aeaeb7]" :
+                "border-[#aeaeb7] text-white"
               )}>
                 {evaluation.status}
               </span>
             </div>
             
-            <p className="text-sm font-medium text-slate-300 mt-1">
+            <p className="text-sm text-[#aeaeb7] mt-1 font-normal">
               {evaluation.reason || (isVeto 
                 ? 'Critical security violation detected: Agent was influenced by untrusted input to invoke restricted sinks.' 
                 : isUnsupported ? 'An agent may exist, but AgentVeto cannot currently instrument this runtime safely.'
@@ -89,63 +86,63 @@ export default function RunOverview({ data, onSwitchTab }) {
           </div>
         </div>
 
-        {/* Quick Action Navigation Buttons */}
+        {/* Quick Action Navigation Buttons (Harness Hardware Pills) */}
         <div className="flex items-center space-x-3 shrink-0">
           <button
             onClick={() => onSwitchTab('attack')}
-            className="px-4 py-2 rounded-xl bg-[#1F293D] hover:bg-slate-700 text-xs font-bold text-white border border-slate-700 flex items-center space-x-2 transition-all font-sans"
+            className="btn-harness-ghost px-5 py-2.5 text-xs flex items-center space-x-2 cursor-pointer"
           >
-            <Crosshair className="w-3.5 h-3.5 text-amber-400" />
-            <span>VIEW ATTACK</span>
+            <Crosshair className="w-3.5 h-3.5 text-[#70dcd3]" />
+            <span className="tracking-[0.056em] uppercase text-[11px]">VIEW ATTACK</span>
           </button>
           <button
             onClick={() => onSwitchTab('evidence')}
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-lg shadow-indigo-600/25 flex items-center space-x-2 transition-all font-sans"
+            className="btn-harness-white px-5 py-2.5 text-xs flex items-center space-x-2 cursor-pointer"
           >
-            <Layers className="w-3.5 h-3.5" />
-            <span>VIEW EVIDENCE</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <Layers className="w-3.5 h-3.5 text-[#070707]" />
+            <span className="tracking-[0.056em] uppercase text-[11px]">VIEW EVIDENCE</span>
+            <ArrowRight className="w-3.5 h-3.5 text-[#070707]" />
           </button>
         </div>
       </div>
 
       {meta.execution_mode === 'deterministic_fixture' && (
-        <div className="rounded-xl border border-indigo-500/25 bg-indigo-950/20 px-4 py-3 text-xs text-indigo-100">
-          <span className="mr-2 font-mono font-bold uppercase text-indigo-300">Controlled fixture</span>
-          {meta.fixture_disclosure || 'Evidence was generated in an isolated deterministic sandbox.'}
+        <div className="rounded-full border border-[#22222a] bg-[#0d0e12] px-5 py-2.5 text-xs text-[#aeaeb7] flex items-center space-x-2">
+          <span className="font-mono font-medium uppercase text-[#70dcd3] tracking-[0.094em]">Controlled fixture:</span>
+          <span>{meta.fixture_disclosure || 'Evidence was generated in an isolated deterministic sandbox.'}</span>
         </div>
       )}
 
       {/* Primary Execution Metadata Cards */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-        <div className="p-4 rounded-xl bg-[#0E131F] border border-[#1F293D]">
-          <div className="text-[10px] font-mono text-slate-400 uppercase font-bold tracking-wider">Target Agent</div>
-          <div className="text-sm font-bold text-white truncate mt-1">{meta.agent_name || data.trace?.agent_name}</div>
+        <div className="p-4 bg-[#0d0e12] border border-[#d9dae5]/16 rounded-[20px]">
+          <div className="text-[10px] font-mono text-[#a2a4a9] uppercase tracking-[0.094em]">Target Agent</div>
+          <div className="text-sm font-medium text-white truncate mt-1">{meta.agent_name || data.trace?.agent_name}</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#0E131F] border border-[#1F293D]">
-          <div className="text-[10px] font-mono text-slate-400 uppercase font-bold tracking-wider">Run ID</div>
-          <div className="text-sm font-bold text-indigo-400 font-mono truncate mt-1">{meta.run_number || data.scenario_id}</div>
+        <div className="p-4 bg-[#0d0e12] border border-[#d9dae5]/16 rounded-[20px]">
+          <div className="text-[10px] font-mono text-[#a2a4a9] uppercase tracking-[0.094em]">Run ID</div>
+          <div className="text-sm font-medium text-[#70dcd3] font-mono truncate mt-1">{meta.run_number || data.scenario_id}</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#0E131F] border border-[#1F293D]">
-          <div className="text-[10px] font-mono text-slate-400 uppercase font-bold tracking-wider">Duration</div>
-          <div className="text-sm font-bold text-white font-mono mt-1">{meta.duration || '—'}</div>
+        <div className="p-4 bg-[#0d0e12] border border-[#d9dae5]/16 rounded-[20px]">
+          <div className="text-[10px] font-mono text-[#a2a4a9] uppercase tracking-[0.094em]">Duration</div>
+          <div className="text-sm font-medium text-white font-mono mt-1">{meta.duration || '—'}</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#0E131F] border border-[#1F293D]">
-          <div className="text-[10px] font-mono text-slate-400 uppercase font-bold tracking-wider">Attack Attempts</div>
-          <div className="text-sm font-bold text-amber-400 font-mono mt-1">{meta.attack_attempts ?? data.attack_analysis?.attempts?.length ?? '—'}</div>
+        <div className="p-4 bg-[#0d0e12] border border-[#d9dae5]/16 rounded-[20px]">
+          <div className="text-[10px] font-mono text-[#a2a4a9] uppercase tracking-[0.094em]">Attack Attempts</div>
+          <div className="text-sm font-medium text-white font-mono mt-1">{meta.attack_attempts ?? data.attack_analysis?.attempts?.length ?? '—'}</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#0E131F] border border-[#1F293D]">
-          <div className="text-[10px] font-mono text-slate-400 uppercase font-bold tracking-wider">Tool Calls</div>
-          <div className="text-sm font-bold text-white font-mono mt-1">{data.trace?.spans?.length ?? meta.tool_calls ?? '—'}</div>
+        <div className="p-4 bg-[#0d0e12] border border-[#d9dae5]/16 rounded-[20px]">
+          <div className="text-[10px] font-mono text-[#a2a4a9] uppercase tracking-[0.094em]">Tool Calls</div>
+          <div className="text-sm font-medium text-white font-mono mt-1">{data.trace?.spans?.length ?? meta.tool_calls ?? '—'}</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#0E131F] border border-[#1F293D]">
-          <div className="text-[10px] font-mono text-slate-400 uppercase font-bold tracking-wider">State Changes</div>
-          <div className={clsx("text-sm font-bold font-mono mt-1", isVeto ? "text-red-400" : "text-slate-400")}>
+        <div className="p-4 bg-[#0d0e12] border border-[#d9dae5]/16 rounded-[20px]">
+          <div className="text-[10px] font-mono text-[#a2a4a9] uppercase tracking-[0.094em]">State Changes</div>
+          <div className={clsx("text-sm font-medium font-mono mt-1", isVeto ? "text-[#f43f5e]" : "text-[#70dcd3]")}>
             {data.state_diff?.diff_keys?.length || (isVeto ? 1 : 0)}
           </div>
         </div>
@@ -155,68 +152,48 @@ export default function RunOverview({ data, onSwitchTab }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
         {/* Threat Classification */}
-        <div className="p-5 rounded-xl bg-[#0E131F] border border-[#1F293D] space-y-4">
-          <div className="flex items-center space-x-2 text-xs font-mono font-bold text-slate-400 uppercase border-b border-[#1F293D] pb-3">
-            <Flame className="w-4 h-4 text-red-400" />
-            <span>Threat Taxonomy</span>
+        <div className="p-6 bg-[#0d0e12] border border-[#d9dae5]/16 rounded-[20px] space-y-4">
+          <div className="flex items-center space-x-2 text-xs font-mono font-medium text-[#a2a4a9] uppercase tracking-[0.094em] border-b border-[#22222a] pb-3">
+            <Flame className="w-4 h-4 text-[#f43f5e]" />
+            <span>Threat Taxonomy & Standard Mapping</span>
           </div>
 
-          <div className="space-y-3">
-            <div>
-              <div className="text-[10px] text-slate-500 font-mono uppercase tracking-wider font-semibold">OWASP Threat Classification</div>
-              <div className="text-sm font-bold text-white mt-0.5">
-                {evaluation.threat_category || meta.threat_category || 'ASI01 — Agent Goal Hijacking'}
-              </div>
+          <div className="space-y-3 text-xs">
+            <div className="flex justify-between items-center py-1">
+              <span className="text-[#aeaeb7]">OWASP GenAI Standard:</span>
+              <span className="font-mono font-medium text-white">{data.threat_category || 'OWASP-ASI01 (Agent Goal Hijacking)'}</span>
             </div>
-
-            <div>
-              <div className="text-[10px] text-slate-500 font-mono uppercase tracking-wider font-semibold">Attack Vector</div>
-              <div className="text-sm font-semibold text-indigo-300 mt-0.5">
-                Indirect Prompt Injection (Context-Poisoned Tool Response)
-              </div>
+            <div className="flex justify-between items-center py-1">
+              <span className="text-[#aeaeb7]">CWE Mapping:</span>
+              <span className="font-mono text-white">{data.cwe_mapping || 'CWE-77 (Command Injection)'}</span>
             </div>
-
-            <div>
-              <div className="text-[10px] text-slate-500 font-mono uppercase tracking-wider font-semibold">Policy Rule Triggered</div>
-              <div className="text-xs font-mono text-red-400 bg-red-950/20 p-2.5 rounded-lg border border-red-500/20 mt-1">
-                {evaluation.rule_name || 'No policy rule triggered'}
-              </div>
+            <div className="flex justify-between items-center py-1">
+              <span className="text-[#aeaeb7]">Target Capability:</span>
+              <span className="font-mono text-[#70dcd3] font-medium">{data.attack_analysis?.target_capability || 'Tool Invocation Chain'}</span>
             </div>
           </div>
         </div>
 
-        {/* Source to Sink Causal Vector */}
-        <div className="p-5 rounded-xl bg-[#0E131F] border border-[#1F293D] space-y-4">
-          <div className="flex items-center space-x-2 text-xs font-mono font-bold text-slate-400 uppercase border-b border-[#1F293D] pb-3">
-            <Crosshair className="w-4 h-4 text-amber-400" />
-            <span>Exploitation Path (Source → Sink)</span>
+        {/* Exploit Causal Chain */}
+        <div className="p-6 bg-[#0d0e12] border border-[#d9dae5]/16 rounded-[20px] space-y-4">
+          <div className="flex items-center space-x-2 text-xs font-mono font-medium text-[#a2a4a9] uppercase tracking-[0.094em] border-b border-[#22222a] pb-3">
+            <Bug className="w-4 h-4 text-[#70dcd3]" />
+            <span>Adjudication Causality</span>
           </div>
 
-          <div className="space-y-3">
-            <div className="p-3.5 rounded-xl bg-[#080D17] border border-[#1F293D] flex items-center justify-between">
-              <div>
-                <div className="text-[10px] font-mono text-amber-400 uppercase font-semibold">Injection Source</div>
-                <div className="text-xs font-mono font-bold text-white mt-0.5">{injectionSource}</div>
-              </div>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                UNTRUSTED DATA
-              </span>
+          <div className="space-y-3 text-xs font-mono">
+            <div className="flex justify-between items-center py-1">
+              <span className="text-[#aeaeb7]">Tainted Input Source:</span>
+              <span className="text-[#70dcd3] font-medium">{injectionSource}</span>
             </div>
-
-            <div className="text-center">
-              <span className="text-xs font-mono text-slate-500">↓ Tainted Control Flow ↓</span>
+            <div className="flex justify-between items-center py-1">
+              <span className="text-[#aeaeb7]">Violating Sink Tool:</span>
+              <span className="text-[#f43f5e] font-medium">{highRiskSink}</span>
             </div>
-
-            <div className="p-3.5 rounded-xl bg-[#080D17] border border-[#1F293D] flex items-center justify-between">
-              <div>
-                <div className="text-[10px] font-mono text-red-400 uppercase font-semibold">High-Risk Sink</div>
-                <div className="text-xs font-mono font-bold text-white mt-0.5">{highRiskSink}</div>
-              </div>
-              <span className={clsx(
-                "px-2 py-0.5 rounded text-[10px] font-mono font-semibold border",
-                isVeto ? "bg-red-500/10 text-red-400 border-red-500/20" : "bg-slate-800 text-slate-300 border-slate-700"
-              )}>
-                {isVeto ? 'BLOCKED BY VETO' : 'NOT REACHED'}
+            <div className="flex justify-between items-center py-1">
+              <span className="text-[#aeaeb7]">State Mutation Attempt:</span>
+              <span className={isVeto ? "text-[#f43f5e] font-medium" : "text-[#70dcd3] font-medium"}>
+                {isVeto ? "PROVED (Captured in Sandbox)" : "NONE OBSERVED"}
               </span>
             </div>
           </div>

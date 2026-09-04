@@ -1,94 +1,86 @@
 import React from 'react';
-import { Shield, Plus, History, LayoutDashboard, FileText, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Shield, Plus, History, LayoutDashboard, FileText, Home } from 'lucide-react';
 import clsx from 'clsx';
 
-export default function Navbar({ currentView, setCurrentView, onOpenNewScan, activeRunId }) {
+export default function Navbar({ currentView, setCurrentView, onOpenNewScan }) {
   return (
-    <header className="h-14 border-b border-[#1F293D] bg-[#0E131F]/95 backdrop-blur-md px-6 flex items-center justify-between shrink-0 select-none z-30">
+    <header className="h-14 border-b border-[#23252a] bg-[#08090a]/95 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between shrink-0 select-none z-40 relative">
       
-      {/* Brand */}
-      <div className="flex items-center space-x-6">
-        <div 
-          onClick={() => setCurrentView('dashboard')}
-          className="flex items-center space-x-2.5 cursor-pointer group"
-        >
-          <div className="w-8 h-8 rounded-lg bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500/25 group-hover:border-indigo-500/50 transition-all">
-            <Shield className="w-4 h-4 text-indigo-400" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-1.5 leading-none">
-              <span className="text-sm font-medium tracking-tight text-slate-300">
-                Agent<span className="font-extrabold text-white">Veto</span>
-              </span>
-              <span className="px-1.5 py-0.5 text-[9px] font-mono font-bold bg-[#131926] text-indigo-300 rounded border border-[#1F293D]">
-                GATE
-              </span>
-            </div>
-            <span className="text-[10px] text-slate-500 font-mono tracking-wide">Continuous Adversarial Security</span>
-          </div>
+      {/* Brand on Left (Matching AUROS alignment) */}
+      <div 
+        onClick={() => setCurrentView('landing')}
+        className="flex items-center space-x-2.5 cursor-pointer group shrink-0"
+      >
+        <div className="w-6 h-6 rounded-[6px] bg-[#161718] border border-[#23252a] flex items-center justify-center text-white group-hover:border-[#70dcd3]/50 transition-colors">
+          <Shield className="w-3.5 h-3.5 text-[#70dcd3]" />
         </div>
-
-        {/* Nav Links */}
-        <nav className="flex items-center space-x-1 border-l border-[#1F293D] pl-6">
-          <button
-            onClick={() => setCurrentView('dashboard')}
-            className={clsx(
-              "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all",
-              currentView === 'dashboard'
-                ? "bg-[#1F293D] text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-200 hover:bg-[#151B28]"
-            )}
-          >
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            <span>Dashboard</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentView('details')}
-            className={clsx(
-              "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all",
-              currentView === 'details'
-                ? "bg-[#1F293D] text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-200 hover:bg-[#151B28]"
-            )}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Run Details</span>
-            {activeRunId && (
-              <span className="ml-1 px-1.5 py-0.2 rounded text-[10px] font-mono bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
-                {activeRunId}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setCurrentView('history')}
-            className={clsx(
-              "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all",
-              currentView === 'history'
-                ? "bg-[#1F293D] text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-200 hover:bg-[#151B28]"
-            )}
-          >
-            <History className="w-3.5 h-3.5" />
-            <span>Run History</span>
-          </button>
-        </nav>
+        <div className="flex items-center">
+          <span className="text-[15px] font-sans font-medium tracking-[-0.015em] text-white">
+            Agent<span className="text-[#70dcd3]">Veto</span>
+          </span>
+        </div>
       </div>
 
-      {/* Right Actions */}
-      <div className="flex items-center space-x-3">
-        <div className="flex items-center space-x-2 text-xs font-mono text-slate-400 border-r border-[#1F293D] pr-4">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span className="text-slate-300 font-semibold tracking-wider text-[11px]">GATE ACTIVE</span>
-        </div>
+      {/* Centered Navigation Buttons (Matching AUROS reference alignment) */}
+      <nav className="absolute left-1/2 -translate-x-1/2 flex items-center space-x-1 sm:space-x-2">
+        <button
+          onClick={() => setCurrentView('landing')}
+          className={clsx(
+            "px-3 py-1.5 rounded-[6px] text-[13px] font-sans transition-colors cursor-pointer",
+            currentView === 'landing'
+              ? "bg-white/[0.08] text-white font-medium"
+              : "text-[#8a8f98] hover:text-white hover:bg-white/[0.04]"
+          )}
+        >
+          <span>Home</span>
+        </button>
 
         <button
+          onClick={() => setCurrentView('dashboard')}
+          className={clsx(
+            "px-3 py-1.5 rounded-[6px] text-[13px] font-sans transition-colors cursor-pointer",
+            currentView === 'dashboard'
+              ? "bg-white/[0.08] text-white font-medium"
+              : "text-[#8a8f98] hover:text-white hover:bg-white/[0.04]"
+          )}
+        >
+          <span>Console</span>
+        </button>
+
+        <button
+          onClick={() => setCurrentView('details')}
+          className={clsx(
+            "px-3 py-1.5 rounded-[6px] text-[13px] font-sans transition-colors cursor-pointer",
+            currentView === 'details'
+              ? "bg-white/[0.08] text-white font-medium"
+              : "text-[#8a8f98] hover:text-white hover:bg-white/[0.04]"
+          )}
+        >
+          <span>Run Details</span>
+        </button>
+
+        <button
+          onClick={() => setCurrentView('history')}
+          className={clsx(
+            "px-3 py-1.5 rounded-[6px] text-[13px] font-sans transition-colors cursor-pointer",
+            currentView === 'history'
+              ? "bg-white/[0.08] text-white font-medium"
+              : "text-[#8a8f98] hover:text-white hover:bg-white/[0.04]"
+          )}
+        >
+          <span>History</span>
+        </button>
+      </nav>
+
+      {/* Right Action: Clean CTA Button (GATE ACTIVE badge removed) */}
+      <div className="flex items-center shrink-0">
+        <button
           onClick={onOpenNewScan}
-          className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-bold rounded-lg flex items-center space-x-1.5 shadow-sm shadow-indigo-600/30 transition-all font-sans"
+          className="px-4 py-1.5 bg-white hover:bg-[#e5e5e6] text-[#08090a] text-[13px] font-medium tracking-[-0.011em] rounded-full flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
-          <span>New Security Scan</span>
+          <span className="hidden sm:inline">New Security Scan</span>
+          <span className="sm:hidden">New Scan</span>
         </button>
       </div>
 

@@ -1,26 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
-  Shield, 
-  ShieldAlert, 
-  ShieldCheck, 
-  Layers, 
-  Crosshair, 
-  Clock, 
-  FileCode2, 
-  FileText, 
-  Activity, 
-  Zap, 
-  Database,
-  ArrowRight,
   ChevronRight,
-  Plus,
   RefreshCw,
-  Terminal
+  FileText,
+  Crosshair,
+  Clock,
+  Layers,
+  FileCode2
 } from 'lucide-react';
 import clsx from 'clsx';
 
 import Navbar from './components/Navbar';
+import LandingPage from './components/LandingPage';
 import Dashboard from './components/Dashboard';
 import NewScanModal from './components/NewScanModal';
 import ScanProgress from './components/ScanProgress';
@@ -32,7 +24,7 @@ import RegressionView from './components/RegressionView';
 import RunHistory from './components/RunHistory';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'details', 'history', 'progress'
+  const [currentView, setCurrentView] = useState('landing'); // 'landing', 'dashboard', 'details', 'history', 'progress'
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'attack', 'trace', 'evidence', 'regression'
   
   const [scenarios, setScenarios] = useState([]);
@@ -47,11 +39,11 @@ export default function App() {
   const [currentScanConfig, setCurrentScanConfig] = useState(null);
 
   const [metrics, setMetrics] = useState({
-    total_evaluations: 0,
-    veto_count: 0,
-    pass_count: 0,
-    warn_count: 0,
-    average_latency_ms: 0.0
+    total_evaluations: 18,
+    veto_count: 12,
+    pass_count: 5,
+    warn_count: 1,
+    average_latency_ms: 0.85
   });
 
   useEffect(() => {
@@ -148,23 +140,29 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full bg-[#090D14] text-[#E2E8F0] font-sans overflow-hidden select-none">
+    <div className="flex flex-col h-screen w-full bg-[#070707] text-[#ffffff] font-sans overflow-hidden select-none">
       
       {/* Top Global Navigation Bar */}
       <Navbar
         currentView={currentView}
         setCurrentView={setCurrentView}
         onOpenNewScan={() => setIsNewScanOpen(true)}
-        activeRunId={scenarioData?.metadata?.run_number || '#AV-1042'}
       />
 
-      {/* VIEW 1: DASHBOARD (SCREEN 1) */}
+      {/* VIEW 0: LANDING PAGE (INTUITIVE, HUMAN EXPLANATION) */}
+      {currentView === 'landing' && (
+        <LandingPage
+          onOpenConsole={() => setCurrentView('dashboard')}
+          onOpenNewScan={() => setIsNewScanOpen(true)}
+        />
+      )}
+
+      {/* VIEW 1: DASHBOARD CONSOLE (CLEAN, MINIMAL, NO DUPLICATE BUTTONS) */}
       {currentView === 'dashboard' && (
         <Dashboard
           runs={scenarios}
           metrics={metrics}
           onSelectRun={handleSelectRun}
-          onOpenNewScan={() => setIsNewScanOpen(true)}
         />
       )}
 
@@ -193,44 +191,46 @@ export default function App() {
 
       {/* VIEW 4: RUN DETAILS WORKSPACE (SCREENS 4 - 10) */}
       {currentView === 'details' && (
-        <div className="flex-1 flex flex-col min-w-0 bg-[#090D14] overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 bg-[#070707] overflow-hidden">
           
           {/* Subheader with Target Agent, Verdict, and Primary Tabs */}
-          <header className="h-16 border-b border-[#1F293D] bg-[#0E131F]/90 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-20">
+          <header className="h-16 border-b border-[#22222a] bg-[#070707]/95 px-8 flex items-center justify-between shrink-0 z-20">
             
-            {/* Target Agent & Run ID */}
+            {/* Target Agent & Run Details Breadcrumb */}
             <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2 text-xs font-mono text-slate-400">
+              <div className="flex items-center space-x-2 text-xs font-mono text-[#a2a4a9]">
                 <span 
                   onClick={() => setCurrentView('dashboard')}
-                  className="hover:text-indigo-400 cursor-pointer font-semibold"
+                  className="hover:text-white cursor-pointer font-medium transition-colors"
                 >
-                  Runs
+                  Console
                 </span>
-                <ChevronRight className="w-3 h-3 text-slate-600" />
-                <span className="text-indigo-400 font-bold">
+                <ChevronRight className="w-3 h-3 text-[#60606c]" />
+                <span className="text-[#70dcd3] font-medium font-mono">
                   {scenarioData?.metadata?.run_number || '#AV-1042'}
                 </span>
               </div>
-              <div className="h-4 w-[1px] bg-[#1F293D]" />
+              <div className="h-4 w-[1px] bg-[#22222a]" />
               <div className="flex items-center space-x-2">
-                <h2 className="text-sm font-bold text-white tracking-tight">
+                <h2 className="text-sm font-medium text-white tracking-tight">
                   {scenarioData?.metadata?.agent_name || 'Target Agent'}
                 </h2>
-                <span className="text-xs text-slate-500 font-mono">
+                <span className="text-xs text-[#aeaeb7] font-mono">
                   ({scenarioData?.metadata?.name || scenarioData?.scenario_id})
                 </span>
               </div>
             </div>
 
-            {/* Tabs: Overview, Attack, Trace, Evidence, Regression */}
+            {/* Tabs: Overview, Attack, Trace, Evidence, Regression (Hardware Pill Style) */}
             <div className="flex items-center space-x-3">
-              <div className="flex bg-[#090D14] p-1 rounded-xl border border-[#1F293D] space-x-1">
+              <div className="flex bg-[#0d0e12] p-1 rounded-full border border-[#22222a] space-x-1">
                 <button
                   onClick={() => setActiveTab('overview')}
                   className={clsx(
-                    "px-3 py-1.5 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-all font-sans",
-                    activeTab === 'overview' ? "bg-[#1F293D] text-white shadow-sm" : "text-slate-400 hover:text-white"
+                    "px-4 py-1.5 text-xs font-medium rounded-full flex items-center space-x-1.5 transition-all cursor-pointer",
+                    activeTab === 'overview' 
+                      ? "bg-white text-[#070707] shadow-sm" 
+                      : "text-[#a2a4a9] hover:text-white"
                   )}
                 >
                   <FileText className="w-3.5 h-3.5" />
@@ -240,19 +240,23 @@ export default function App() {
                 <button
                   onClick={() => setActiveTab('attack')}
                   className={clsx(
-                    "px-3 py-1.5 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-all font-sans",
-                    activeTab === 'attack' ? "bg-[#1F293D] text-white shadow-sm" : "text-slate-400 hover:text-white"
+                    "px-4 py-1.5 text-xs font-medium rounded-full flex items-center space-x-1.5 transition-all cursor-pointer",
+                    activeTab === 'attack' 
+                      ? "bg-white text-[#070707] shadow-sm" 
+                      : "text-[#a2a4a9] hover:text-white"
                   )}
                 >
-                  <Crosshair className="w-3.5 h-3.5 text-amber-400" />
+                  <Crosshair className="w-3.5 h-3.5" />
                   <span>Attack</span>
                 </button>
 
                 <button
                   onClick={() => setActiveTab('trace')}
                   className={clsx(
-                    "px-3 py-1.5 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-all font-sans",
-                    activeTab === 'trace' ? "bg-[#1F293D] text-white shadow-sm" : "text-slate-400 hover:text-white"
+                    "px-4 py-1.5 text-xs font-medium rounded-full flex items-center space-x-1.5 transition-all cursor-pointer",
+                    activeTab === 'trace' 
+                      ? "bg-white text-[#070707] shadow-sm" 
+                      : "text-[#a2a4a9] hover:text-white"
                   )}
                 >
                   <Clock className="w-3.5 h-3.5" />
@@ -262,8 +266,10 @@ export default function App() {
                 <button
                   onClick={() => setActiveTab('evidence')}
                   className={clsx(
-                    "px-3 py-1.5 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-all font-sans",
-                    activeTab === 'evidence' ? "bg-[#1F293D] text-white shadow-sm" : "text-slate-400 hover:text-white"
+                    "px-4 py-1.5 text-xs font-medium rounded-full flex items-center space-x-1.5 transition-all cursor-pointer",
+                    activeTab === 'evidence' 
+                      ? "bg-white text-[#070707] shadow-sm" 
+                      : "text-[#a2a4a9] hover:text-white"
                   )}
                 >
                   <Layers className="w-3.5 h-3.5" />
@@ -273,8 +279,10 @@ export default function App() {
                 <button
                   onClick={() => setActiveTab('regression')}
                   className={clsx(
-                    "px-3 py-1.5 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-all font-sans",
-                    activeTab === 'regression' ? "bg-[#1F293D] text-white shadow-sm" : "text-slate-400 hover:text-white"
+                    "px-4 py-1.5 text-xs font-medium rounded-full flex items-center space-x-1.5 transition-all cursor-pointer",
+                    activeTab === 'regression' 
+                      ? "bg-white text-[#070707] shadow-sm" 
+                      : "text-[#a2a4a9] hover:text-white"
                   )}
                 >
                   <FileCode2 className="w-3.5 h-3.5" />
@@ -286,9 +294,9 @@ export default function App() {
               <button
                 onClick={handleReEvaluate}
                 disabled={evaluating}
-                className="px-3 py-1.5 rounded-xl bg-[#090D14] hover:bg-[#151B28] text-xs font-bold text-slate-300 border border-[#1F293D] flex items-center space-x-1.5 transition-colors font-sans"
+                className="btn-harness-ghost px-4 py-1.5 text-xs flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
               >
-                <RefreshCw className={clsx("w-3.5 h-3.5 text-indigo-400", evaluating && "animate-spin")} />
+                <RefreshCw className={clsx("w-3.5 h-3.5 text-[#70dcd3]", evaluating && "animate-spin")} />
                 <span>Re-Evaluate</span>
               </button>
             </div>
@@ -301,7 +309,7 @@ export default function App() {
               
               {loading && !scenarioData ? (
                 <div className="p-12 text-center text-slate-500 font-mono text-xs flex items-center justify-center space-x-2">
-                  <RefreshCw className="w-4 h-4 animate-spin text-indigo-400" />
+                  <RefreshCw className="w-4 h-4 animate-spin text-slate-400" />
                   <span>Loading adjudication telemetry...</span>
                 </div>
               ) : (

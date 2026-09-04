@@ -53,27 +53,30 @@ export default function RegressionView({ data }) {
       
       {/* Vulnerability Gating Status Banner */}
       <div className={clsx(
-        "p-6 rounded-2xl border flex items-center justify-between shadow-xl",
-        isVeto ? "bg-red-950/20 border-red-500/40" : "bg-slate-900 border-slate-800"
+        "p-6 rounded-[20px] border flex items-center justify-between bg-[#0d0e12]",
+        isVeto ? "border-[#f43f5e]/40" : "border-[#70dcd3]/40"
       )}>
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+          <div className={clsx(
+            "w-12 h-12 rounded-full border flex items-center justify-center shrink-0",
+            isVeto ? "bg-[#f43f5e]/10 border-[#f43f5e]/30 text-[#f43f5e]" : "bg-[#70dcd3]/10 border-[#70dcd3]/30 text-[#70dcd3]"
+          )}>
             <FileCode2 className="w-6 h-6" />
           </div>
 
           <div>
             <div className="flex items-center space-x-2">
-              <h2 className="text-base font-bold text-white uppercase font-mono">
+              <h2 className="text-base font-medium text-white uppercase font-mono tracking-[0.056em]">
                 {saved ? 'REGRESSION TEST SAVED' : (isVeto ? 'VULNERABILITY CONFIRMED' : 'TEST SPECIFICATION CREATED')}
               </h2>
               {saved && (
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono border border-[#70dcd3] text-[#70dcd3]">
                   STORED IN TEST SUITE
                 </span>
               )}
             </div>
             
-            <p className="text-xs text-slate-300 mt-1">
+            <p className="text-xs text-[#aeaeb7] mt-1 font-normal">
               {isVeto 
                 ? 'This caught exploit has been serialized into a deterministic regression test to prevent regressions in GitHub Actions.' 
                 : 'Nominal baseline interaction converted into invariant compliance test.'}
@@ -85,13 +88,13 @@ export default function RegressionView({ data }) {
           {!saved ? (
             <button
               onClick={handleSave}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-bold rounded-xl flex items-center space-x-2 shadow-lg shadow-indigo-600/30 transition-all"
+              className="btn-harness-white px-5 py-2.5 text-xs flex items-center space-x-2 cursor-pointer"
             >
-              <BookmarkCheck className="w-4 h-4" />
+              <BookmarkCheck className="w-4 h-4 text-[#070707]" />
               <span>SAVE REGRESSION TEST</span>
             </button>
           ) : (
-            <div className="flex items-center space-x-1.5 text-xs font-mono text-emerald-400 bg-emerald-950/30 px-3 py-1.5 rounded-lg border border-emerald-500/30">
+            <div className="flex items-center space-x-1.5 text-xs font-mono text-[#70dcd3] border border-[#70dcd3]/30 px-3.5 py-1.5 rounded-full">
               <Check className="w-4 h-4" />
               <span>TEST SUITE UPDATED</span>
             </div>
@@ -101,52 +104,52 @@ export default function RegressionView({ data }) {
 
       {/* Regression Metadata Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="p-4 rounded-xl bg-[#121824] border border-slate-800">
-          <span className="text-[10px] font-mono text-slate-500 uppercase">Test Identifier</span>
-          <div className="text-xs font-bold text-white font-mono mt-0.5">{data.scenario_id}</div>
+        <div className="p-4 rounded-[20px] bg-[#0d0e12] border border-[#d9dae5]/16">
+          <span className="text-[10px] font-mono text-[#a2a4a9] uppercase tracking-[0.094em]">Test Identifier</span>
+          <div className="text-xs font-medium text-white font-mono mt-1">{data.scenario_id}</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#121824] border border-slate-800">
-          <span className="text-[10px] font-mono text-slate-500 uppercase">Threat Vector</span>
-          <div className="text-xs font-bold text-red-400 font-mono mt-0.5">{evaluation.threat_category || 'ASI01'}</div>
+        <div className="p-4 rounded-[20px] bg-[#0d0e12] border border-[#d9dae5]/16">
+          <span className="text-[10px] font-mono text-[#a2a4a9] uppercase tracking-[0.094em]">Threat Vector</span>
+          <div className="text-xs font-medium text-[#f43f5e] font-mono mt-1">{evaluation.threat_category || 'ASI01'}</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#121824] border border-slate-800">
-          <span className="text-[10px] font-mono text-slate-500 uppercase">Expected Adjudication</span>
-          <div className="text-xs font-bold text-indigo-400 font-mono mt-0.5">{evaluation.status || 'CRITICAL_VETO'}</div>
+        <div className="p-4 rounded-[20px] bg-[#0d0e12] border border-[#d9dae5]/16">
+          <span className="text-[10px] font-mono text-[#a2a4a9] uppercase tracking-[0.094em]">Expected Adjudication</span>
+          <div className="text-xs font-medium text-[#70dcd3] font-mono mt-1">{evaluation.status || 'CRITICAL_VETO'}</div>
         </div>
       </div>
 
       {/* YAML Specification Code Card */}
-      <div className="rounded-2xl bg-[#121824] border border-slate-800 overflow-hidden shadow-2xl">
+      <div className="rounded-[20px] bg-[#0d0e12] border border-[#d9dae5]/16 overflow-hidden">
         
-        <div className="p-4 bg-[#0E131F] border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center space-x-2 font-mono text-xs text-slate-300">
-            <span className="text-indigo-400 font-bold">spec.yaml</span>
-            <span className="text-slate-600">•</span>
-            <span className="text-[11px] text-slate-500">Replayable via CLI: <code className="text-slate-300">python -m agentveto.cli test spec.yaml</code></span>
+        <div className="p-4 bg-[#141418] border-b border-[#22222a] flex items-center justify-between">
+          <div className="flex items-center space-x-2 font-mono text-xs text-[#a2a4a9]">
+            <span className="text-[#70dcd3] font-medium">spec.yaml</span>
+            <span className="text-[#60606c]">•</span>
+            <span className="text-[11px] text-[#aeaeb7]">Replayable via CLI: <code className="text-white">python -m agentveto.cli test spec.yaml</code></span>
           </div>
 
           <div className="flex items-center space-x-2">
             <button
               onClick={handleCopy}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-mono font-medium text-slate-200 border border-slate-700 flex items-center space-x-1.5 transition-colors"
+              className="btn-harness-ghost px-3.5 py-1.5 text-xs flex items-center space-x-1.5 cursor-pointer"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? <Check className="w-3.5 h-3.5 text-[#70dcd3]" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied ? 'Copied' : 'Copy YAML'}</span>
             </button>
 
             <button
               onClick={handleDownload}
-              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-mono font-medium text-white shadow-sm shadow-indigo-600/30 flex items-center space-x-1.5 transition-colors"
+              className="btn-harness-white px-4 py-1.5 text-xs flex items-center space-x-1.5 cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-3.5 h-3.5 text-[#070707]" />
               <span>Download .yaml</span>
             </button>
           </div>
         </div>
 
-        <div className="p-6 bg-[#06080e] overflow-x-auto text-xs font-mono">
+        <div className="p-6 bg-[#070707] overflow-x-auto text-xs font-mono">
           <YamlViewer content={data.yaml_content} />
         </div>
 

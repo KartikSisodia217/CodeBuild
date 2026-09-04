@@ -7,24 +7,26 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'monospace'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        display: ['"Space Grotesk"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       colors: {
-        gate: {
-          bg: '#090D14',
-          surface: '#0E131F',
-          card: '#131926',
-          cardHover: '#182030',
-          border: '#1F293D',
-          borderLight: '#2D3A54',
-          textMuted: '#6B7A94',
-          textSecondary: '#94A3B8',
-          textPrimary: '#F1F5F9',
-          veto: '#EF4444',
-          pass: '#10B981',
-          warn: '#F59E0B',
-          accent: '#6366F1',
+        harness: {
+          void: '#070707',
+          carbon: '#0d0e12',
+          obsidian: '#141418',
+          steel: '#22222a',
+          iron: '#2e3038',
+          fog: '#d9dae5',
+          ash: '#c8cad0',
+          graphite: '#aeaeb7',
+          slate: '#a2a4a9',
+          cinder: '#60606c',
+          mint: '#70dcd3',
+          signal: '#0092e4',
+          verdant: '#75ae4c',
+          veto: '#F43F5E',
         }
       }
     },
