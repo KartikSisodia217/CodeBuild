@@ -86,6 +86,36 @@ def patch_tool_instances(tools: List[BaseTool], policies: Dict[str, Any]) -> Non
                 return wrapper
             
             tool.func = make_wrapper(original_func, tool, policy)
+
+        # Patch custom framework tool handler (e.g. LedgerAI)
+        original_handler = getattr(tool, "handler", None)
+        if original_handler:
+            if inspect.iscoroutinefunction(original_handler):
+                def make_async_handler_wrapper(orig, t, pol):
+                    async def wrapper(*args, **kwargs):
+                        payload = attack_payload_var.get()
+                        is_source = bool(payload and payload.target_tool == t.name)
+                        is_sink = bool(payload and t.name == payload.metadata.get("sink_tool"))
+                        if is_source or is_sink:
+                            return _observe_execution(t, kwargs, is_source, is_sink, pol)
+                        result = await orig(*args, **kwargs)
+                        TraceManager().log_span("TOOL", {"tool.name": t.name, "agentveto.intercepted": False}, name=t.name, tool_name=t.name, tool_parameters=kwargs, input_value=kwargs, output_value=str(result))
+                        return result
+                    return wrapper
+                tool.handler = make_async_handler_wrapper(original_handler, tool, policy)
+            else:
+                def make_handler_wrapper(orig, t, pol):
+                    def wrapper(*args, **kwargs):
+                        payload = attack_payload_var.get()
+                        is_source = bool(payload and payload.target_tool == t.name)
+                        is_sink = bool(payload and t.name == payload.metadata.get("sink_tool"))
+                        if is_source or is_sink:
+                            return _observe_execution(t, kwargs, is_source, is_sink, pol)
+                        result = orig(*args, **kwargs)
+                        TraceManager().log_span("TOOL", {"tool.name": t.name, "agentveto.intercepted": False}, name=t.name, tool_name=t.name, tool_parameters=kwargs, input_value=kwargs, output_value=str(result))
+                        return result
+                    return wrapper
+                tool.handler = make_handler_wrapper(original_handler, tool, policy)
             
         # Patch async function
         original_coro = getattr(tool, "coroutine", None)

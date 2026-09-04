@@ -28,6 +28,13 @@ def main() -> int:
     # Target imports are intentionally delayed until after AgentVeto and stdlib are loaded
     # to prevent arbitrary code execution from malicious standard library shadowing (e.g. malicious json.py).
     sys.path.insert(0, project_dir)
+    sys.path.insert(0, project_dir)
+    import os
+    print("WORKER DEBUG project_dir:", project_dir, file=sys.stderr)
+    print("WORKER DEBUG has backend:", os.path.isdir(os.path.join(project_dir, 'backend')), file=sys.stderr)
+    print("WORKER DEBUG has backend/ai:", os.path.isdir(os.path.join(project_dir, 'backend', 'ai')), file=sys.stderr)
+    print("WORKER DEBUG sys.path:", sys.path, file=sys.stderr)
+    print("WORKER DEBUG 'backend' in sys.modules:", 'backend' in sys.modules, file=sys.stderr)
     
     adapter = LangGraphAdapter(spec["run_id"], spec["entrypoint"], spec.get("execution_options", {}))
     if spec["mode"] == "discover":

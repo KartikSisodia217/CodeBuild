@@ -155,7 +155,7 @@ def test_ledgerai_regression():
     # 17. LedgerAI discovery regression
     import os
     from agentveto.ingestion.discovery import discover_project
-    workspaces_dir = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))) / "agentveto" / "ingestion" / "workspaces"
+    workspaces_dir = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))) / "backend" / "agentveto" / "ingestion" / "workspaces"
     ledgerai_path = None
     for d in workspaces_dir.glob("*/KartikSisodia217-Innovahack_LedgerAI*"):
         if d.is_dir():

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { X, Play, Server, UploadCloud, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import clsx from 'clsx';
 
-export default function NewScanModal({ isOpen, onClose, onStartScan }) {
+export default function NewScanModal({ isOpen, onClose, onStartScan, isLoading }) {
   const [activeTab, setActiveTab] = useState('upload'); // 'upload' | 'demo'
   
   // Demo State
@@ -160,9 +160,18 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
                 <button type="button" onClick={handleClose} className="btn-secondary">
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary space-x-2">
-                  <Play className="w-3.5 h-3.5" />
-                  <span>Run Scan</span>
+                <button type="submit" disabled={isLoading} className="btn-primary space-x-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Scanning...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-3.5 h-3.5" />
+                      <span>Run Scan</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -295,7 +304,7 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
                               <div className="text-xs text-av-textSecondary mt-1 font-mono">{agent.file}</div>
                             </div>
                             <div className="text-[10px] text-av-textSecondary bg-av-bg border border-av-border px-2 py-0.5 rounded uppercase font-semibold">
-                              {agent.tools?.length || 0} tools found
+                              {agent.tools?.length || 0} explicit tool declarations
                             </div>
                           </div>
                         ))
@@ -307,12 +316,25 @@ export default function NewScanModal({ isOpen, onClose, onStartScan }) {
                     <button type="button" onClick={() => setUploadStatus('idle')} className="text-xs font-semibold text-av-textSecondary hover:text-av-textPrimary">
                       Back
                     </button>
-                    {manifest.agentic && manifest.supported && (
-                      <button onClick={handleStartManifestScan} className="btn-primary space-x-1.5">
-                        <Play className="w-3.5 h-3.5" />
-                        <span>Run Scan</span>
-                      </button>
-                    )}
+                    <button 
+                      onClick={handleStartManifestScan} 
+                      disabled={isLoading}
+                      className="btn-primary space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Scanning...</span>
+                        </>
+                      ) : manifest.agentic && manifest.supported ? (
+                        <>
+                          <Play className="w-3.5 h-3.5" />
+                          <span>Run Scan</span>
+                        </>
+                      ) : (
+                        <span>View Details</span>
+                      )}
+                    </button>
                   </div>
 
                 </div>

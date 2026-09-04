@@ -73,6 +73,19 @@ class LangGraphAdapter(AgentAdapter):
                     val = getattr(mod, attr_name)
                     if isinstance(val, BaseTool) and val not in tools:
                         tools.append(val)
+                    # Duck-typing for custom framework tool definitions (e.g. LedgerAI ToolDefinition)
+                    elif hasattr(val, "name") and hasattr(val, "description") and callable(getattr(val, "handler", None)):
+                        if val not in tools:
+                            tools.append(val)
+                    # Duck-typing for custom tool registries (e.g. LedgerAI ToolRegistry)
+                    elif hasattr(val, "get_all_tools") and callable(val.get_all_tools):
+                        try:
+                            for t in val.get_all_tools():
+                                if hasattr(t, "name") and hasattr(t, "description") and callable(getattr(t, "handler", None)):
+                                    if t not in tools:
+                                        tools.append(t)
+                        except Exception:
+                            pass
                 except Exception:
                     pass
                     
@@ -85,10 +98,15 @@ class LangGraphAdapter(AgentAdapter):
         for tool in tools:
             args_schema = getattr(tool, "args_schema", None)
             parameters = args_schema.model_json_schema() if args_schema and hasattr(args_schema, "model_json_schema") else {"type": "object", "properties": {}}
+            
+            # Extract generic duck-typed inputs if args_schema is missing
+            if not args_schema and hasattr(tool, "inputs") and isinstance(tool.inputs, list):
+                parameters = {"type": "object", "properties": {k: {"type": "string"} for k in tool.inputs}}
+                
             metadata = dict(getattr(tool, "metadata", None) or {})
             if tool.name in actions:
                 metadata["agentveto_action"] = actions[tool.name]
-            result.append(ToolSchema(name=tool.name, description=getattr(tool, "description", "") or "", parameters=parameters, required=parameters.get("required", []), metadata=metadata))
+            result.append(ToolSchema(name=tool.name, description=getattr(tool, "description", "") or "", parameters=parameters, required=parameters.get("required", list(parameters.get("properties", {}).keys())), metadata=metadata))
         return result
 
     def discover_tools(self) -> List[ToolSchema]:
@@ -123,10 +141,15 @@ class LangGraphAdapter(AgentAdapter):
                             
                     # Execute
                     if inspect.iscoroutinefunction(target) or (hasattr(target, "ainvoke") and callable(target.ainvoke)):
-                        if hasattr(target, "ainvoke"):
-                            asyncio.run(target.ainvoke(input_arg))
-                        else:
-                            asyncio.run(target(input_arg, "task_123"))
+                        try:
+                            async def run_async():
+                                if hasattr(target, "ainvoke"):
+                                    return await asyncio.wait_for(target.ainvoke(input_arg), timeout=15.0)
+                                else:
+                                    return await asyncio.wait_for(target(input_arg, "task_123"), timeout=15.0)
+                            asyncio.run(run_async())
+                        except asyncio.TimeoutError:
+                            return ExecutionResult(run_id=self.run_id, status=ScanStatus.EXECUTION_UNAVAILABLE, error_message="Execution timed out.")
                     else:
                         if hasattr(target, "invoke"):
                             target.invoke(input_arg)
@@ -141,7 +164,15 @@ class LangGraphAdapter(AgentAdapter):
         except Exception as exc:
             import traceback
             tb = traceback.format_exc()
-            return ExecutionResult(run_id=self.run_id, status=ScanStatus.EXECUTION_FAILED, error_message=f"LangGraph worker error: {type(exc).__name__}: {exc}\n{tb}")
+            exc_name = type(exc).__name__
+            # Detect database connection failures for external dependencies
+            if exc_name == "OperationalError" or (exc_name == "Exception" and "postgres" in str(exc).lower()):
+                return ExecutionResult(
+                    run_id=self.run_id, 
+                    status=ScanStatus.EXECUTION_UNAVAILABLE, 
+                    error_message=f"Required external infrastructure (e.g. database) is unavailable: {exc_name}: {exc}"
+                )
+            return ExecutionResult(run_id=self.run_id, status=ScanStatus.EXECUTION_FAILED, error_message=f"LangGraph worker error: {exc_name}: {exc}\n{tb}")
 
 # Compatibility name for callers that previously imported the worker runner.
 WorkerLangGraphRunner = LangGraphAdapter

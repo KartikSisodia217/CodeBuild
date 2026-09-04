@@ -60,8 +60,8 @@ export default function RunOverview({ data, onSwitchTab }) {
     bannerClass = "bg-av-warnBg border-av-warn/30 text-av-warn";
     iconBgClass = "bg-[#1E1911] text-av-warn border-av-warn/30";
   } else if (isNotRun) {
-    title = "SCAN NOT RUN";
-    description = "AgentVeto detected a compatible agent, but could not safely execute it in the current environment.";
+    title = verdict === 'EXECUTION_UNAVAILABLE' ? 'EXECUTION UNAVAILABLE' : 'SCAN NOT RUN';
+    description = meta.message || "AgentVeto detected a compatible agent, but could not safely execute it in the current environment.";
     icon = <MinusCircle className="w-8 h-8 text-av-textMuted" />;
     bannerClass = "bg-av-surface border-av-border text-av-textPrimary";
     iconBgClass = "bg-av-bg text-av-textMuted border-av-borderLight";

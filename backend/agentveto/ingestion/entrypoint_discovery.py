@@ -85,10 +85,11 @@ class LangGraphEntrypointVisitor(ast.NodeVisitor):
 def discover_entrypoints(directory: str) -> List[EntrypointCandidate]:
     base_path = Path(directory)
     candidates = []
-    for root, _, files in base_path.walk():
+    import os
+    for root, _, files in os.walk(base_path):
         for file in files:
             if file.endswith('.py'):
-                full_path = root / file
+                full_path = Path(root) / file
                 try:
                     content = full_path.read_text(encoding='utf-8')
                     tree = ast.parse(content, filename=str(full_path))
