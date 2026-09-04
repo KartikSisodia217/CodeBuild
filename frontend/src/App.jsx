@@ -103,17 +103,18 @@ export default function App() {
   };
 
   const handleStartScan = async (config) => {
-    setIsNewScanOpen(false);
     setCurrentScanConfig(config);
     setScanError(null);
     setLoading(true);
     try {
       const res = await axios.post('http://127.0.0.1:8000/api/scan', config);
       setCurrentScanConfig({ ...config, scanResult: res.data });
+      setIsNewScanOpen(false);
       setCurrentView('progress');
       await fetchMetrics();
     } catch (err) {
       setScanError(err.response?.data?.detail || 'The controlled scan could not be completed.');
+      setIsNewScanOpen(false);
       setCurrentView('dashboard');
     } finally {
       setLoading(false);
@@ -362,6 +363,7 @@ export default function App() {
       {/* SCREEN 2: NEW SCAN MODAL */}
       <NewScanModal
         isOpen={isNewScanOpen}
+        isLoading={loading}
         onClose={() => setIsNewScanOpen(false)}
         onStartScan={handleStartScan}
       />

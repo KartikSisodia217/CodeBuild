@@ -1,1 +1,0 @@
-<LiveStreams cameras={cameras} monitoringOnly />

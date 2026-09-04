@@ -310,6 +310,12 @@ async def analyze_github_project(req: GithubAnalyzeRequest):
         repository, revision = fetch_github_repo(req.repository_url, workspace.workspace_path)
         workspace.repository = repository
         workspace.revision = revision
+        extracted_items = os.listdir(workspace.workspace_path)
+        if len(extracted_items) == 1:
+            item = extracted_items[0]
+            item_path = os.path.join(workspace.workspace_path, item)
+            if os.path.isdir(item_path):
+                workspace.workspace_path = item_path
     except Exception as e:
         shutil.rmtree(workspace.workspace_path, ignore_errors=True)
         raise HTTPException(status_code=400, detail=str(e))
@@ -339,6 +345,17 @@ async def analyze_project(file: UploadFile = File(...)):
             
         try:
             safe_extract(zip_path, workspace.workspace_path)
+            extracted_items = os.listdir(workspace.workspace_path)
+            if len(extracted_items) == 2 and "uploaded.zip" in extracted_items:
+                item = [x for x in extracted_items if x != "uploaded.zip"][0]
+                item_path = os.path.join(workspace.workspace_path, item)
+                if os.path.isdir(item_path):
+                    workspace.workspace_path = item_path
+            elif len(extracted_items) == 1:
+                item = extracted_items[0]
+                item_path = os.path.join(workspace.workspace_path, item)
+                if os.path.isdir(item_path):
+                    workspace.workspace_path = item_path
         except ExtractionError as e:
             raise HTTPException(status_code=400, detail=str(e))
             

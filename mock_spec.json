@@ -1,1 +1,0 @@
-{"project_dir": "tests/fixtures/langgraph_test_project", "adapter": "langgraph", "entrypoint": "agent:graph", "out_path": "out.json", "mode": "discover", "run_id": "run_test"}
