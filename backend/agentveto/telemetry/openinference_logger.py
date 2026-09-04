@@ -71,8 +71,6 @@ class TraceManager:
                 span.set_attribute("agentveto.run_id", run_id)
             span.set_attribute("agentveto.span_id", span_id)
 
-        from agentveto.telemetry.storage import SQLiteSpanStorage
-
         storage_attributes = dict(attributes)
         storage_attributes.update(
             {
@@ -81,7 +79,9 @@ class TraceManager:
                 "agentveto.parent_span_id": parent_span_id_var.get(),
             }
         )
-        SQLiteSpanStorage.save_span(span_kind, storage_attributes)
+        if os.environ.get("AGENTVETO_WORKER_PROCESS") != "1":
+            from agentveto.telemetry.storage import SQLiteSpanStorage
+            SQLiteSpanStorage.save_span(span_kind, storage_attributes)
 
         try:
             kind = SpanKind(span_kind.upper())

@@ -92,7 +92,10 @@ export default function App() {
   const fetchScenarioDetails = async (id) => {
     try {
       setLoading(true);
-      const res = await axios.get(`http://127.0.0.1:8000/api/scenarios/${id}`);
+      const url = id.startsWith('run_') 
+        ? `http://127.0.0.1:8000/api/scan/${id}`
+        : `http://127.0.0.1:8000/api/scenarios/${id}`;
+      const res = await axios.get(url);
       setScenarioData(res.data);
     } catch (err) {
       console.error("Failed to fetch scenario details:", err);
@@ -128,8 +131,11 @@ export default function App() {
   const handleCompleteScan = () => {
     if (currentScanConfig?.scanResult) {
       setScenarioData(currentScanConfig.scanResult);
+      if (currentScanConfig.scanResult.run_id) {
+        setSelectedScenarioId(currentScanConfig.scanResult.run_id);
+      }
     }
-    if (currentScanConfig?.scenario_id) {
+    if (currentScanConfig?.scenario_id && !currentScanConfig?.scanResult?.run_id) {
       setSelectedScenarioId(currentScanConfig.scenario_id);
     }
     setCurrentView('details');
@@ -140,8 +146,15 @@ export default function App() {
     if (!selectedScenarioId) return;
     setEvaluating(true);
     try {
-      await fetchScenarioDetails(selectedScenarioId);
+      if (selectedScenarioId.startsWith('run_')) {
+        const res = await axios.post(`http://127.0.0.1:8000/api/scan/${selectedScenarioId}/re-evaluate`);
+        setScenarioData(res.data);
+      } else {
+        await fetchScenarioDetails(selectedScenarioId);
+      }
       await fetchMetrics();
+    } catch (err) {
+      console.error("Failed to re-evaluate:", err);
     } finally {
       setTimeout(() => setEvaluating(false), 300);
     }

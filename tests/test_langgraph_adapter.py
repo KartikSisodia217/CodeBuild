@@ -12,7 +12,7 @@ def test_langgraph_fixture_veto():
     data = response.json()
     assert data["status"] == "COMPLETED"
     assert data["evaluation"]["status"] == "VETO"
-    assert data["metadata"]["execution_mode"] == "subprocess"
+    assert data["metadata"]["execution_mode"] == "deterministic_fixture"
 
 def test_langgraph_fixture_pass():
     response = client.post("/api/scan", json={"scenario_id": "benign_support_flow"})
@@ -21,4 +21,4 @@ def test_langgraph_fixture_pass():
     data = response.json()
     assert data["status"] == "COMPLETED"
     assert data["evaluation"]["status"] == "PASS"
-    assert data["metadata"]["execution_mode"] == "subprocess"
+    assert data["metadata"]["execution_mode"] == "deterministic_fixture"

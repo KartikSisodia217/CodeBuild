@@ -20,12 +20,15 @@ def main() -> int:
     with open(sys.argv[1], encoding="utf-8") as handle:
         spec = json.load(handle)
     project_dir = spec["project_dir"]
-    # Target imports are intentionally delayed until after this worker starts.
-    sys.path.insert(0, project_dir)
     if spec["adapter"] != "langgraph":
         return 3
     from agentveto.adapters.langgraph_adapter import LangGraphAdapter
     from agentveto.contracts.schemas import AttackPayload
+    
+    # Target imports are intentionally delayed until after AgentVeto and stdlib are loaded
+    # to prevent arbitrary code execution from malicious standard library shadowing (e.g. malicious json.py).
+    sys.path.insert(0, project_dir)
+    
     adapter = LangGraphAdapter(spec["run_id"], spec["entrypoint"], spec.get("execution_options", {}))
     if spec["mode"] == "discover":
         result = [item.model_dump(mode="json") for item in adapter.discover_tools()]

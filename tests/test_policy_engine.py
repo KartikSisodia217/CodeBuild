@@ -14,7 +14,7 @@ from agentveto.schemas import (
     TrajectoryData,
     StateDiff,
     SecurityVerdict,
-
+    PolicyRule,
     OpenInferenceSpan,
     SpanKind,
 )
@@ -32,7 +32,9 @@ def load_sample_trace(filename: str) -> TrajectoryData:
 def test_zero_click_echoleak_triggers_critical_veto():
     """Verify that indirect prompt injection leading to execute_refund is strictly VETOED."""
     trace = load_sample_trace("zero_click_echoleak.json")
-    result = evaluate_trace(trace)
+    from agentveto.schemas import PolicyRule
+    rule = PolicyRule(rule_id="RULE-SINK-001", name="RESTRICTED_FINANCIAL_SINK", sink_tool="execute_refund", description="Test rule", threat_category="ASI01: Agent Goal Hijacking (Indirect Prompt Injection)")
+    result = evaluate_trace(trace, custom_rules=[rule])
 
     assert result.status == SecurityVerdict.VETO
     assert result.violating_tool == "execute_refund"
@@ -44,7 +46,9 @@ def test_zero_click_echoleak_triggers_critical_veto():
 def test_benign_support_flow_passes():
     """Verify that a standard support ticket without sink tools receives a PASS."""
     trace = load_sample_trace("benign_support_flow.json")
-    result = evaluate_trace(trace)
+    from agentveto.schemas import PolicyRule
+    rule = PolicyRule(rule_id="RULE-SINK-001", name="RESTRICTED_FINANCIAL_SINK", sink_tool="execute_refund", description="Test rule", threat_category="ASI01: Agent Goal Hijacking (Indirect Prompt Injection)")
+    result = evaluate_trace(trace, custom_rules=[rule])
 
     assert result.status == SecurityVerdict.PASS
     assert result.violating_span_id is None
@@ -55,7 +59,9 @@ def test_benign_support_flow_passes():
 def test_data_exfiltration_triggers_critical_veto():
     """Verify that leaked API keys in outbound webhook parameters trigger a DLP VETO."""
     trace = load_sample_trace("data_exfiltration.json")
-    result = evaluate_trace(trace)
+    from agentveto.schemas import PolicyRule
+    rule = PolicyRule(rule_id="RULE-SINK-001", name="RESTRICTED_FINANCIAL_SINK", sink_tool="execute_refund", description="Test rule", threat_category="ASI01: Agent Goal Hijacking (Indirect Prompt Injection)")
+    result = evaluate_trace(trace, custom_rules=[rule])
 
     assert result.status == SecurityVerdict.VETO
     assert result.threat_category == "MCP10: Sensitive Data Exfiltration"
@@ -65,7 +71,9 @@ def test_data_exfiltration_triggers_critical_veto():
 def test_cascading_failure_triggers_warning():
     """Verify that repetitive 404 tool calls trigger a WARN for retry storms."""
     trace = load_sample_trace("cascading_failure.json")
-    result = evaluate_trace(trace)
+    from agentveto.schemas import PolicyRule
+    rule = PolicyRule(rule_id="RULE-SINK-001", name="RESTRICTED_FINANCIAL_SINK", sink_tool="execute_refund", description="Test rule", threat_category="ASI01: Agent Goal Hijacking (Indirect Prompt Injection)")
+    result = evaluate_trace(trace, custom_rules=[rule])
 
     assert result.status == SecurityVerdict.VETO
     assert result.threat_category == "ASI08: Cascading Tool Loops & Retry Storms"
@@ -95,7 +103,7 @@ def test_state_diff_unauthorized_mutation_veto():
         state_mutated=True
     )
 
-    result = evaluate_trace(trace, state=state_diff)
+    result = evaluate_trace(trace, state=state_diff, custom_rules=[PolicyRule(rule_id='1', name='r', sink_tool='execute_refund', description='r', threat_category='ASI')])
     assert result.status == SecurityVerdict.VETO
     assert "State Invariant Violation" in result.reason
 
@@ -122,7 +130,9 @@ def test_known_source_without_an_injection_is_not_reported_as_a_causal_chain():
         ],
     )
 
-    result = evaluate_trace(trace)
+    from agentveto.schemas import PolicyRule
+    rule = PolicyRule(rule_id="RULE-SINK-001", name="RESTRICTED_FINANCIAL_SINK", sink_tool="execute_refund", description="Test rule", threat_category="ASI01: Agent Goal Hijacking (Indirect Prompt Injection)")
+    result = evaluate_trace(trace, custom_rules=[rule])
 
     assert result.status == SecurityVerdict.VETO
     assert result.details["injection_detected"] is False

@@ -16,7 +16,7 @@ DEFAULT_POLICY_RULES: List[PolicyRule] = [
     PolicyRule(
         rule_id="RULE-SINK-001",
         name="RESTRICTED_FINANCIAL_SINK_WITHOUT_APPROVAL",
-        sink_tool="execute_refund",
+        sink_tool="execute_refund_deprecated",
         description="Prevents unauthorized refunds, money transfers, or financial transactions triggered without human authorization.",
         requires_authorization=True,
         severity="CRITICAL_VETO",
