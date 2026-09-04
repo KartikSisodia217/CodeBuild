@@ -2,7 +2,7 @@ import React from 'react';
 import { Shield, Plus, History, LayoutDashboard, FileText, Activity } from 'lucide-react';
 import clsx from 'clsx';
 
-export default function Navbar({ currentView, setCurrentView, onOpenNewScan }) {
+export default function Navbar({ currentView, setCurrentView, onOpenNewScan, activeRunId }) {
   return (
     <header className="h-12 border-b border-av-border bg-av-surface px-6 flex items-center justify-between shrink-0 select-none z-30">
       
@@ -17,7 +17,6 @@ export default function Navbar({ currentView, setCurrentView, onOpenNewScan }) {
             AgentVeto
           </span>
         </div>
-      </div>
 
         {/* Nav Links */}
         <nav className="flex items-center space-x-1 border-l border-av-border pl-6 h-6">
@@ -83,6 +82,7 @@ export default function Navbar({ currentView, setCurrentView, onOpenNewScan }) {
           <Plus className="w-3.5 h-3.5" />
           <span>New Scan</span>
         </button>
+      </div>
       </div>
     </header>
   );

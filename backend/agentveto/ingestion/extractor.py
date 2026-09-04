@@ -26,7 +26,18 @@ DEFAULT_EXCLUDED_EXTENSIONS = {
     '.pyc',
     '.sqlite',
     '.sqlite3',
-    '.db'
+    '.db',
+    '.wasm',
+    '.so',
+    '.dylib',
+    '.dll',
+    '.exe',
+    '.bin',
+    '.o',
+    '.obj',
+    '.a',
+    '.lib',
+    '.class'
 }
 
 def should_exclude(filename: str, excluded_dirs: Set[str], excluded_extensions: Set[str]) -> bool:

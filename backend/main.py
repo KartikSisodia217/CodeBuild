@@ -279,15 +279,24 @@ def reevaluate_scan(run_id: str):
     if result.status in [ScanStatus.UNSUPPORTED_ENTRYPOINT, ScanStatus.EXECUTION_UNAVAILABLE, ScanStatus.EXECUTION_FAILED]:
         return result
         
-    if result.status != ScanStatus.COMPLETED or not result.trajectory or not result.trajectory.spans:
+    # Re-execute in a new context using the exact run_id and workspace
+    manifest = result.project_manifest
+    if not manifest:
         return result
         
-    rules = [PolicyRule(rule_id="RULE-REEVALUATE", name="OBSERVED_HIGH_RISK_SINK_WITHOUT_AUTHORIZATION", sink_tool=result.attack_plan.sink_tool if result.attack_plan else "", description="Use the original run's schema-derived sink.")]
-    evaluation = evaluate_trace(result.trajectory, result.state_diff, rules)
-    result.evaluation = evaluation
-    result.verdict = evaluation.status
-    result.evidence = generate_dag(result.trajectory, evaluation) if evaluation.status else None
-    return result
+    workspace = get_workspace(manifest.project_id)
+    workspace_path = workspace.workspace_path if workspace else manifest.project_name
+    
+    runtime = ExecutionRuntime(manifest, workspace_path)
+    runtime.run_id = run_id # MUST use the exact run_id
+    
+    new_result = runtime.execute()
+    
+    if new_result.evaluation:
+        _record_evaluation(new_result.evaluation)
+        
+    SCAN_RUNS[run_id] = new_result
+    return new_result
 
 
 @app.post("/api/projects/analyze/github", response_model=ProjectManifest)
