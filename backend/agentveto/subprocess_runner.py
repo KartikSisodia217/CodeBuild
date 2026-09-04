@@ -23,7 +23,11 @@ def run_external_project(manifest: ProjectManifest, project_dir: str, mode: str 
     run_id = run_id or f"run_{uuid.uuid4().hex[:12]}"
     with tempfile.TemporaryDirectory(prefix="agentveto-ipc-") as comm_dir:
         config_path, out_path = os.path.join(comm_dir, "spec.json"), os.path.join(comm_dir, "result.json")
-        config = {"project_dir": project_dir, "adapter": manifest.integration_type, "entrypoint": manifest.entrypoint, "out_path": out_path, "mode": mode, "run_id": run_id, "payload": payload.model_dump(mode="json") if payload else None, "execution_options": (manifest.explicit_configuration or {}).get("execution", {})}
+        execution_options = (manifest.explicit_configuration or {}).get("execution", {})
+        if manifest.detected_tools:
+            execution_options["detected_tools"] = [t.model_dump(mode="json") for t in manifest.detected_tools]
+        
+        config = {"project_dir": project_dir, "adapter": manifest.integration_type, "entrypoint": manifest.entrypoint, "out_path": out_path, "mode": mode, "run_id": run_id, "payload": payload.model_dump(mode="json") if payload else None, "execution_options": execution_options}
         with open(config_path, "w", encoding="utf-8") as handle:
             json.dump(config, handle)
         package_root = os.path.dirname(os.path.dirname(__file__))

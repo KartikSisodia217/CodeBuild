@@ -221,6 +221,21 @@ def discover_project(
             manifest.integration_type = config["adapter"]
             manifest.entrypoint = config.get("entrypoint")
 
+    if manifest.agentic and not manifest.entrypoint and manifest.integration_type == "langgraph":
+        from agentveto.ingestion.entrypoint_discovery import discover_entrypoints
+        candidates = discover_entrypoints(extract_dir)
+        if candidates:
+            best_candidate = candidates[0]
+            manifest.entrypoint = f"{best_candidate.module}:{best_candidate.object_name}"
+            # Expose candidates in metadata if needed
+            if not manifest.explicit_configuration:
+                manifest.explicit_configuration = {}
+            manifest.explicit_configuration["discovered_entrypoint"] = manifest.entrypoint
+            manifest.explicit_configuration["entrypoint_candidates"] = [
+                {"module": c.module, "object": c.object_name, "kind": c.kind, "confidence": c.confidence}
+                for c in candidates
+            ]
+
     if not manifest.agentic:
         manifest.supported = False
         manifest.integration_type = manifest.integration_type or ""
@@ -234,5 +249,6 @@ def discover_project(
     else:
         manifest.supported = False
         manifest.warnings.append("No supported AgentVeto integration detected. Current supported integrations: python_interceptor, langgraph.")
+
         
     return manifest

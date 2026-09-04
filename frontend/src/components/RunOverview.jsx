@@ -16,6 +16,7 @@ export default function RunOverview({ data, onSwitchTab }) {
 
   const evaluation = data.evaluation || {};
   const meta = data.metadata || {};
+  const manifest = data.project_manifest || {};
   
   const verdict = meta.verdict || data.verdict || data.status;
   const isVeto = verdict === 'CRITICAL_VETO' || verdict === 'VETO';
@@ -108,7 +109,7 @@ export default function RunOverview({ data, onSwitchTab }) {
         <div className="p-5 rounded-xl border border-av-border bg-av-surface shadow-subtle">
           <h3 className="text-sm font-medium text-av-textPrimary mb-4">Detection Details</h3>
           <div className="text-sm text-av-textSecondary space-y-2">
-            <p><strong>Detected framework:</strong> {meta.integration_type || meta.language || 'Unknown'}</p>
+            <p><strong>Detected framework:</strong> {manifest.integration_type || meta.language || 'Unknown'}</p>
             <p>No security scan was performed.</p>
           </div>
         </div>
