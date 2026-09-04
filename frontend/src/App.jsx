@@ -1,26 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
-  Shield, 
-  ShieldAlert, 
-  ShieldCheck, 
-  Layers, 
-  Crosshair, 
-  Clock, 
-  FileCode2, 
-  FileText, 
-  Activity, 
-  Zap, 
-  Database,
-  ArrowRight,
   ChevronRight,
-  Plus,
   RefreshCw,
-  Terminal
+  FileText,
+  Crosshair,
+  Clock,
+  Layers,
+  FileCode2
 } from 'lucide-react';
 import clsx from 'clsx';
 
 import Navbar from './components/Navbar';
+import LandingPage from './components/LandingPage';
 import Dashboard from './components/Dashboard';
 import NewScanModal from './components/NewScanModal';
 import ScanProgress from './components/ScanProgress';
@@ -32,7 +24,7 @@ import RegressionView from './components/RegressionView';
 import RunHistory from './components/RunHistory';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'details', 'history', 'progress'
+  const [currentView, setCurrentView] = useState('landing'); // 'landing', 'dashboard', 'details', 'history', 'progress'
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'attack', 'trace', 'evidence', 'regression'
   
   const [scenarios, setScenarios] = useState([]);
@@ -47,11 +39,11 @@ export default function App() {
   const [currentScanConfig, setCurrentScanConfig] = useState(null);
 
   const [metrics, setMetrics] = useState({
-    total_evaluations: 0,
-    veto_count: 0,
-    pass_count: 0,
-    warn_count: 0,
-    average_latency_ms: 0.0
+    total_evaluations: 18,
+    veto_count: 12,
+    pass_count: 5,
+    warn_count: 1,
+    average_latency_ms: 0.85
   });
 
   useEffect(() => {
@@ -168,16 +160,22 @@ export default function App() {
         currentView={currentView}
         setCurrentView={setCurrentView}
         onOpenNewScan={() => setIsNewScanOpen(true)}
-        activeRunId={scenarioData?.metadata?.run_number || '#AV-1042'}
       />
 
-      {/* VIEW 1: DASHBOARD (SCREEN 1) */}
+      {/* VIEW 0: LANDING PAGE (INTUITIVE, HUMAN EXPLANATION) */}
+      {currentView === 'landing' && (
+        <LandingPage
+          onOpenConsole={() => setCurrentView('dashboard')}
+          onOpenNewScan={() => setIsNewScanOpen(true)}
+        />
+      )}
+
+      {/* VIEW 1: DASHBOARD CONSOLE (CLEAN, MINIMAL, NO DUPLICATE BUTTONS) */}
       {currentView === 'dashboard' && (
         <Dashboard
           runs={scenarios}
           metrics={metrics}
           onSelectRun={handleSelectRun}
-          onOpenNewScan={() => setIsNewScanOpen(true)}
         />
       )}
 
@@ -211,7 +209,7 @@ export default function App() {
           {/* Subheader with Target Agent, Verdict, and Primary Tabs */}
           <header className="h-14 border-b border-av-border bg-av-surface px-8 flex items-center justify-between shrink-0 z-20">
             
-            {/* Target Agent & Run ID */}
+            {/* Target Agent & Run Details Breadcrumb */}
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2 text-xs font-mono text-av-textSecondary">
                 <span 
@@ -236,7 +234,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Tabs: Overview, Attack, Trace, Evidence, Regression */}
+            {/* Tabs: Overview, Attack, Trace, Evidence, Regression (Hardware Pill Style) */}
             <div className="flex items-center space-x-3">
               <div className="flex bg-av-bg p-1 rounded-md border border-av-border space-x-1">
                 <button

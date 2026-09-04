@@ -2,7 +2,7 @@ import React from 'react';
 import { Shield, Plus, History, LayoutDashboard, FileText, Activity } from 'lucide-react';
 import clsx from 'clsx';
 
-export default function Navbar({ currentView, setCurrentView, onOpenNewScan, activeRunId }) {
+export default function Navbar({ currentView, setCurrentView, onOpenNewScan }) {
   return (
     <header className="h-12 border-b border-av-border bg-av-surface px-6 flex items-center justify-between shrink-0 select-none z-30">
       
@@ -17,6 +17,7 @@ export default function Navbar({ currentView, setCurrentView, onOpenNewScan, act
             AgentVeto
           </span>
         </div>
+      </div>
 
         {/* Nav Links */}
         <nav className="flex items-center space-x-1 border-l border-av-border pl-6 h-6">
@@ -73,6 +74,8 @@ export default function Navbar({ currentView, setCurrentView, onOpenNewScan, act
           <span>System Active</span>
         </div>
 
+      {/* Right Action: Clean CTA Button (GATE ACTIVE badge removed) */}
+      <div className="flex items-center shrink-0">
         <button
           onClick={onOpenNewScan}
           className="btn-primary space-x-1.5 h-7 text-xs px-3"

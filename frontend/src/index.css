@@ -28,8 +28,8 @@
 
 /* Custom Scrollbars - minimal dark */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -68,8 +68,11 @@
   fill: #F3F4F6 !important;
 }
 
-.react-flow__attribution {
-  display: none !important;
+/* Obsidian Surface (Nested panels & code blocks) */
+.obsidian-surface {
+  background-color: #141418;
+  border: 1px solid #22222a;
+  border-radius: 16px;
 }
 
 /* Utility classes for subtle interactions */
