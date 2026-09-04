@@ -11,3 +11,5 @@ opentelemetry-sdk
 sqlalchemy
 pyyaml
 deepdiff
+python-multipart
+httpx
