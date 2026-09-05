@@ -1,4 +1,4 @@
-﻿services:
+services:
   - type: web
     name: agentveto-backend
     runtime: python
@@ -7,8 +7,27 @@
     branch: main
     buildCommand: pip install --upgrade pip && pip install -r backend/requirements.txt
     startCommand: uvicorn main:app --app-dir backend --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
     envVars:
       - key: PYTHONPATH
         value: backend
       - key: CORS_ORIGINS
         value: "*"
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+
+  - type: web
+    name: agentveto-frontend
+    env: static
+    plan: free
+    region: oregon
+    branch: main
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: agentveto-backend
+          envVar: RENDER_EXTERNAL_URL
